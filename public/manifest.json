@@ -21,9 +21,15 @@
       "128": "/img/128.png"
     }
   },
+  "web_accessible_resources": [{
+    "resources": ["css/style.css"],
+    "matches": ["https://mercadolibre.com.uy/*", "https://listado.mercadolibre.com.uy/*"]
+  }],
   "content_scripts": [{
+    "css": ["css/style.css"],
     "matches": ["https://mercadolibre.com.uy/*", "https://listado.mercadolibre.com.uy/*"],
-    "js": ["js/content_script.js"]
+    "js": ["js/content_script.js"],
+    "run_at": "document_end"
   }],
   "options_page": "options.html",
   "permissions": [

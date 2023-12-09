@@ -6,7 +6,8 @@ class EbayFront {
         return location.replace('from', '').trim();
     }
     parseHTML(data: string) {
-        const $p = $($.parseHTML(data));
+        const parser = new DOMParser();
+        const html = parser.parseFromString(data, 'text/html');
 		const productContainer = '.srp-results > li';
 		const imageSel = 'img';
 		const nameSel = '[role="heading"]';
@@ -22,30 +23,28 @@ class EbayFront {
 		const totalResults = '.srp-controls__count-heading';
 		const pageSel = '.pagination__item[href="#"]';
         const linkSel = '.s-item__link';
-		const items = $p.find(productContainer)
-            .map((i, a) => {
-                const el = $(a);
-				const { currency, price } = this.getPriceData(el.find(priceSel).text());
+		const items = Array.from(html.querySelectorAll(productContainer))
+            .map((el, u) => {
+				const { currency, price } = this.getPriceData(el.querySelector(priceSel)?.textContent || '');
 				return {
-					image: el.find(imageSel).attr('src'),
-					name: el.find(nameSel).text().trim(),
+					image: el.querySelector(imageSel)?.getAttribute('src'),
+					name: (el.querySelector(nameSel)?.textContent || '').trim(),
 					currency,
 					price,
-					location: this.fixLocation(el.find(locationSel).text()),
-					originalPrice: this.getPriceData(el.find(originalPrice).text()),
-					shippingCost: this.getPriceData(el.find(shippingCost).text()),
-					seller: this.getSellerData(el.find(sellerSel).text()),
-					status: el.find(statusSel).text(),
-					watchCount: this.getNumber(el.find(watchCount).text()),
-					soldCount: this.getNumber(el.find(soldCount).text()),
-					bidCount: this.getNumber(el.find(bidCount).text()),
-					link: el.find(linkSel).attr('href')
+					location: this.fixLocation(el.querySelector(locationSel)?.textContent || ''),
+					originalPrice: this.getPriceData(el.querySelector(originalPrice)?.textContent || ''),
+					shippingCost: this.getPriceData(el.querySelector(shippingCost)?.textContent || ''),
+					seller: this.getSellerData(el.querySelector(sellerSel)?.textContent || ''),
+					status: el.querySelector(statusSel)?.textContent || '',
+					watchCount: this.getNumber(el.querySelector(watchCount)?.textContent || ''),
+					soldCount: this.getNumber(el.querySelector(soldCount)?.textContent || ''),
+					bidCount: this.getNumber(el.querySelector(bidCount)?.textContent || ''),
+					link: el.querySelector(linkSel)?.getAttribute('href')
 				};
 			})
-			.get()
 			.filter((el) => el.name);
 
-		const total = this.getNumber($(totalResults).text());
+		const total = 0;
 		const totalPages = Math.ceil(total / items.length);
 		const res = { items, total, totalPages, proxy: '' };
 		return res;
@@ -75,8 +74,6 @@ class EbayFront {
 			const reviews = parseFloat(match[2].replace(/(\.|\,)/g, ''));
 			const positivePercentage = parseFloat(match[3].replace(',', '.'));
 			return { name, reviews, positivePercentage };
-		} else {
-			console.log('Information not found in the input string.');
 		}
 	}
 	getPriceData(pr: string) {
