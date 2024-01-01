@@ -1,38 +1,4 @@
-.ebay_btn {
-    font-size: 14px;
-    padding: 6px 12px;
-    margin-bottom: 0;
-    display: inline-block;
-    text-decoration: none;
-    text-align: center;
-    white-space: nowrap;
-    vertical-align: middle;
-    -ms-touch-action: manipulation;
-    touch-action: manipulation;
-    cursor: pointer;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-    background-image: none;
-    border: 1px solid transparent;
-}
-
-.ebay_btn:focus,
-.ebay_btn:active:focus {
-    outline: thin dotted;
-    outline: 5px auto -webkit-focus-ring-color;
-    outline-offset: -2px;
-}
-.ebay_btn:hover,
-.ebay_btn:focus {
-    opacity:0.9;
-    color: #333;
-    text-decoration: none;
-}
-
-.ebay_content {
-  color:black;
+.btn_ml_app {
   font-size: 14px;
   padding: 6px 12px;
   margin-bottom: 0;
@@ -50,6 +16,46 @@
   user-select: none;
   background-image: none;
   border: 1px solid transparent;
-  background:rgb(240, 240, 240);
-  min-height:34px;
+}
+
+.btn_ml_app:focus,
+.btn_ml_app:active:focus {
+  outline: thin dotted;
+  outline: 5px auto -webkit-focus-ring-color;
+  outline-offset: -2px;
+}
+.btn_ml_app:hover,
+.btn_ml_app:focus {
+  opacity: 0.9;
+  color: #333;
+  text-decoration: none;
+}
+
+.ebay_content {
+  color: black;
+  font-size: 14px;
+  padding: 6px 12px;
+  margin-bottom: 0;
+  display: inline-block;
+  text-decoration: none;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  -ms-touch-action: manipulation;
+  touch-action: manipulation;
+  cursor: pointer;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  background-image: none;
+  border: 1px solid transparent;
+  background: rgb(240, 240, 240);
+  min-height: 34px;
+}
+
+.btn_ml_app_container {
+  display: flex;
+  padding-top: 8px;
+  gap: 10px;
 }

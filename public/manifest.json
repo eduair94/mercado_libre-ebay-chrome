@@ -40,6 +40,8 @@
   ],
   "host_permissions": [
     "https://www.ebay.com/*",
+    "https://www.amazon.com/*",
+    "https://amazon.com/*",
     "https://ebay.com/*",
     "https://mercadolibre.com.uy/*",
     "https://listado.mercadolibre.com.uy/*"
