@@ -38,10 +38,11 @@ class StoreFront {
   getPriceData(pr: string) {
     let prNoSpaces = pr.replace(/\s/g, "");
     const currencyMatch = prNoSpaces.match(/[A-Z]+/);
-    const priceMatch = prNoSpaces.match(/\d+\.\d+/g);
+    let priceMatch = prNoSpaces.match(/(\d{1,3}(,\d{3})*(\.\d{2})?)/g);
     let currency = "USD";
     let price = 0;
     if (priceMatch) {
+      priceMatch[0] = priceMatch[0].replace(/\,/g, "");
       price = parseFloat(priceMatch[0]);
     }
     if (price) {

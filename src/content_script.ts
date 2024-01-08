@@ -64,7 +64,27 @@ onload = async (event) => {
         console.log(items);
         const { priceAlt, currencyAlt } = currencyConversion(item0);
         const newElement = document.createElement("div");
-        newElement.innerHTML = `<a href="${item0.link}" target="_blank" class="ebay_content">${item0.price} ${item0.currency} (${priceAlt} ${currencyAlt})</a>`;
+        let className = "";
+        let mlPrice = {
+          currency: "USD",
+          price: 0,
+        };
+        try {
+          mlPrice = {
+            currency: item.querySelector(".andes-money-amount__currency-symbol").innerHTML,
+            price: parseFloat(item.querySelector(".andes-money-amount__fraction").innerHTML.replace(/\./g, "")),
+          };
+        } catch (e) {}
+        if (item0.price > 0) {
+          if (mlPrice.currency === "U$S" && item0.price >= mlPrice.price) {
+            className = "btn_ml_danger";
+          } else if (mlPrice.currency !== "U$S" && item0.price >= parseFloat(priceAlt)) {
+            className = "btn_ml_danger";
+          } else {
+            className = "btn_ml_success";
+          }
+        }
+        newElement.innerHTML = `<a href="${item0.link}" target="_blank" class="ebay_content ${className}">${item0.price} ${item0.currency} (${priceAlt} ${currencyAlt})</a>`;
         targetElement.replaceWith(newElement);
       } else {
         const newElement = document.createElement("div");

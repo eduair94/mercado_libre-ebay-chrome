@@ -1,4 +1,7 @@
 .btn_ml_app {
+  z-index:10;
+  position:relative;
+  border-radius:15px;
   font-size: 14px;
   padding: 6px 12px;
   margin-bottom: 0;
@@ -16,22 +19,28 @@
   user-select: none;
   background-image: none;
   border: 1px solid transparent;
+  transition: 0.25s;
+  color:black;
 }
 
 .btn_ml_app:focus,
-.btn_ml_app:active:focus {
+.btn_ml_app:active:focus, 
+.btn_ml_app:active {
+  color:white;
   outline: thin dotted;
   outline: 5px auto -webkit-focus-ring-color;
   outline-offset: -2px;
+  background: #2d3277;
 }
-.btn_ml_app:hover,
-.btn_ml_app:focus {
-  opacity: 0.9;
-  color: #333;
+.btn_ml_app:hover {
+  color: white;
   text-decoration: none;
+  box-shadow: inset 0 0 0 2em #2d3277;
 }
 
 .ebay_content {
+  z-index:10;
+  position:relative;
   color: black;
   font-size: 14px;
   padding: 6px 12px;
@@ -52,10 +61,39 @@
   border: 1px solid transparent;
   background: rgb(240, 240, 240);
   min-height: 34px;
+  border-radius:10px;
 }
 
 .btn_ml_app_container {
   display: flex;
   padding-top: 8px;
   gap: 10px;
+  max-width:100%;
+  flex-wrap:wrap;
+}
+
+
+.btn_ml_success {
+  background-color: #28a745;
+}
+
+a.btn_ml_success,
+a.btn_ml_danger {
+  color:white;
+  font-weight:bold;
+}
+
+a.btn_ml_success:hover,
+a.btn_ml_danger:hover,
+a.btn_ml_success:active,
+a.btn_ml_danger:active,
+a.btn_ml_success:focus,
+a.btn_ml_danger:focus
+{
+  color:white;
+  opacity: 0.8;
+}
+
+.btn_ml_danger {
+  background-color:#dc3545;
 }

@@ -1,7 +1,7 @@
 {
   "name": "MercadoLibre Ebay",
   "description": "Obtener precios de ebay / amazon en MercadoLibre",
-  "version": "0.1.3",
+  "version": "0.1.6",
   "manifest_version": 3,
   "icons": {
     "16": "/img/16.png",

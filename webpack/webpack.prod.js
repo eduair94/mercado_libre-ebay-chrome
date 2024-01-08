@@ -1,6 +1,10 @@
-const merge = require('webpack-merge');
-const common = require('./webpack.common.js');
+const common = require("./webpack.common.js");
 
-module.exports = merge(common, {
-    mode: 'production'
-});
+module.exports = (env, argv) => {
+  // Check if the build is in development mode
+  return {
+    ...common, // Spread operator to merge the common configuration
+    mode: "production", // Default to 'production' if mode is not specified
+    // You can add more development-specific configurations here
+  };
+};
