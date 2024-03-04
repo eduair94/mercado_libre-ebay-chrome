@@ -1,7 +1,7 @@
 {
   "name": "MercadoLibre Ebay",
   "description": "Obtener precios de ebay / amazon en MercadoLibre",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "manifest_version": 3,
   "icons": {
     "16": "/img/16.png",
@@ -23,11 +23,21 @@
   },
   "web_accessible_resources": [{
     "resources": ["css/style.css"],
-    "matches": ["https://mercadolibre.com.uy/*", "https://listado.mercadolibre.com.uy/*"]
+    "matches": [
+      "https://mercadolibre.com.uy/*", 
+      "https://listado.mercadolibre.com.uy/*",
+      "https://mercadolibre.com.co/*", 
+      "https://listado.mercadolibre.com.co/*"
+  ]
   }],
   "content_scripts": [{
     "css": ["css/style.css"],
-    "matches": ["https://mercadolibre.com.uy/*", "https://listado.mercadolibre.com.uy/*"],
+    "matches": [
+      "https://mercadolibre.com.uy/*", 
+      "https://listado.mercadolibre.com.uy/*",
+      "https://mercadolibre.com.co/*", 
+      "https://listado.mercadolibre.com.co/*"
+    ],
     "js": ["js/content_script.js"],
     "run_at": "document_end"
   }],
@@ -39,6 +49,8 @@
     "https://amazon.com/*",
     "https://ebay.com/*",
     "https://mercadolibre.com.uy/*",
-    "https://listado.mercadolibre.com.uy/*"
+    "https://listado.mercadolibre.com.uy/*",
+    "https://mercadolibre.com.co/*",
+    "https://listado.mercadolibre.com.co/*"
   ]
 }

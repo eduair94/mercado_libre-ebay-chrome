@@ -26,26 +26,36 @@ function findMostSimilarProduct(target: string, products: Item[]): Item {
 }
 
 onload = async (event) => {
-  const currencies = await fetch("https://api.cambio-uruguay.com/fortex").then((res) => res.json());
+  const [currencyList, currencies] = await Promise.all([
+    fetch('https://trustpilot.digitalshopuy.com/currency/all').then(res=> res.json()),
+    fetch("https://api.cambio-uruguay.com/fortex").then((res) => res.json())
+  ]);
   const site = window.location.href;
   if (site.includes("mercadolibre.com")) {
     function append(newElement, targetElement) {
       targetElement.appendChild(newElement);
     }
-    function currencyConversion(item: any) {
+    function currencyConversion(item: any, currencySymbol = 'UYU') {
       const price = item.price;
       const currency = item.currency;
       let priceAlt = 0;
-      const usdUYU = currencies["UYU"]["USD"];
       let currencyAlt = "";
+      const usdCurr = currencySymbol === 'UYU' ? currencies[currencySymbol]["USD"] : currencyList.rates[currencySymbol].to;
       if (currency === "USD") {
-        priceAlt = price * usdUYU;
-        currencyAlt = "UYU";
-      } else if (currency === "UYU") {
-        priceAlt = price / usdUYU;
+        priceAlt = price * usdCurr;
+        currencyAlt = currencySymbol;
+      } else if (currency === currencySymbol) {
+        priceAlt = price / usdCurr;
         currencyAlt = "USD";
       }
-      return { priceAlt: priceAlt.toFixed(2), currencyAlt };
+
+      let currFormatter = new Intl.NumberFormat('es-UY', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      });
+
+
+      return { priceRaw: priceAlt, priceAlt: currFormatter.format(priceAlt), currencyAlt };
     }
     function dataProcess(item: Element, data: any, site: "ebay" | "amazon", name: string) {
       //const res = ebayFront.parseHTML(data);
@@ -61,8 +71,13 @@ onload = async (event) => {
       const items = res.items;
       if (items && items.length) {
         const item0 = findMostSimilarProduct(name, items);
-        console.log(items);
-        const { priceAlt, currencyAlt } = currencyConversion(item0);
+        const country = window.location.hostname.split(".").at(-1).toLowerCase();
+        const jsonCurrencies = {
+          uy: "UYU",
+          co: "COP",
+        }
+        const currencySymbol = jsonCurrencies[country];
+        const { priceAlt, currencyAlt, priceRaw } = currencyConversion(item0, currencySymbol);
         const newElement = document.createElement("div");
         let className = "";
         let mlPrice = {
@@ -71,14 +86,15 @@ onload = async (event) => {
         };
         try {
           mlPrice = {
-            currency: item.querySelector(".andes-money-amount__currency-symbol").innerHTML,
-            price: parseFloat(item.querySelector(".andes-money-amount__fraction").innerHTML.replace(/\./g, "")),
+            currency: item.querySelector(".ui-search-price__second-line .andes-money-amount__currency-symbol").innerHTML,
+            price: parseFloat(item.querySelector(".ui-search-price__second-line .andes-money-amount__fraction").innerHTML.replace(/\./g, "")),
           };
         } catch (e) {}
+        console.log("mlPrice", mlPrice, priceRaw);
         if (item0.price > 0) {
           if (mlPrice.currency === "U$S" && item0.price >= mlPrice.price) {
             className = "btn_ml_danger";
-          } else if (mlPrice.currency !== "U$S" && item0.price >= parseFloat(priceAlt)) {
+          } else if (mlPrice.currency !== "U$S" && priceRaw >= mlPrice.price) {
             className = "btn_ml_danger";
           } else {
             className = "btn_ml_success";
