@@ -1,0 +1,106 @@
+{
+  "extensionName": {
+    "message": "Comparador MercadoLibre-eBay",
+    "description": "Nome da extensão"
+  },
+  "extensionDescription": {
+    "message": "Compare preços entre MercadoLibre e eBay de forma inteligente",
+    "description": "Descrição da extensão"
+  },
+  "popupTitle": {
+    "message": "Configuração do Comparador",
+    "description": "Título do popup"
+  },
+  "enabledLabel": {
+    "message": "Estado da Extensão",
+    "description": "Rótulo para habilitar/desabilitar"
+  },
+  "enabledDescription": {
+    "message": "Habilitar ou desabilitar a extensão",
+    "description": "Descrição do toggle de estado"
+  },
+  "enabled": {
+    "message": "Habilitada",
+    "description": "Estado habilitado"
+  },
+  "disabled": {
+    "message": "Desabilitada",
+    "description": "Estado desabilitado"
+  },
+  "textSizeLabel": {
+    "message": "Tamanho do Texto",
+    "description": "Rótulo para o tamanho do texto"
+  },
+  "textSizeDescription": {
+    "message": "Ajuste o tamanho do texto da comparação",
+    "description": "Descrição do ajuste de tamanho"
+  },
+  "textSizeSmall": {
+    "message": "Pequeno",
+    "description": "Tamanho de texto pequeno"
+  },
+  "textSizeMedium": {
+    "message": "Médio",
+    "description": "Tamanho de texto médio"
+  },
+  "textSizeLarge": {
+    "message": "Grande",
+    "description": "Tamanho de texto grande"
+  },
+  "animationsLabel": {
+    "message": "Animações",
+    "description": "Rótulo para animações"
+  },
+  "animationsDescription": {
+    "message": "Mostrar animações nas comparações",
+    "description": "Descrição das animações"
+  },
+  "notificationsLabel": {
+    "message": "Notificações",
+    "description": "Rótulo para notificações"
+  },
+  "notificationsDescription": {
+    "message": "Mostrar notificações de preços encontrados",
+    "description": "Descrição das notificações"
+  },
+  "languageLabel": {
+    "message": "Idioma",
+    "description": "Rótulo para o idioma"
+  },
+  "languageSpanish": {
+    "message": "Español",
+    "description": "Idioma espanhol"
+  },
+  "languagePortuguese": {
+    "message": "Português",
+    "description": "Idioma português"
+  },
+  "saveButton": {
+    "message": "Salvar Configuração",
+    "description": "Botão para salvar"
+  },
+  "resetButton": {
+    "message": "Redefinir",
+    "description": "Botão para redefinir"
+  },
+  "aboutTitle": {
+    "message": "Sobre",
+    "description": "Título da seção sobre"
+  },
+  "aboutDescription": {
+    "message": "Extensão desenvolvida por Eduardo Airaudo para comparar preços de produtos entre MercadoLibre e eBay de forma eficiente.",
+    "description": "Descrição do desenvolvedor"
+  },
+  "versionLabel": {
+    "message": "Versão",
+    "description": "Rótulo de versão"
+  },
+  "settingsSaved": {
+    "message": "Configuração salva com sucesso!",
+    "description": "Mensagem de configuração salva"
+  },
+  "settingsReset": {
+    "message": "Configuração redefinida para valores padrão",
+    "description": "Mensagem de configuração redefinida"
+  }
+}

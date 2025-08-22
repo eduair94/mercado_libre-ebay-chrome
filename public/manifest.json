@@ -1,6 +1,7 @@
 {
-  "name": "MercadoLibre Ebay",
-  "description": "Obtener precios de ebay / amazon en MercadoLibre",
+  "name": "__MSG_extensionName__",
+  "description": "__MSG_extensionDescription__",
+  "default_locale": "es",
   "version": "0.1.7",
   "manifest_version": 3,
   "icons": {
@@ -21,36 +22,21 @@
       "128": "/img/128.png"
     }
   },
-  "web_accessible_resources": [{
-    "resources": ["css/style.css"],
-    "matches": [
-      "https://mercadolibre.com.uy/*", 
-      "https://listado.mercadolibre.com.uy/*",
-      "https://mercadolibre.com.co/*", 
-      "https://listado.mercadolibre.com.co/*"
-  ]
-  }],
-  "content_scripts": [{
-    "css": ["css/style.css"],
-    "matches": [
-      "https://mercadolibre.com.uy/*", 
-      "https://listado.mercadolibre.com.uy/*",
-      "https://mercadolibre.com.co/*", 
-      "https://listado.mercadolibre.com.co/*"
-    ],
-    "js": ["js/content_script.js"],
-    "run_at": "document_end"
-  }],
+  "web_accessible_resources": [
+    {
+      "resources": ["css/style.css"],
+      "matches": ["https://mercadolibre.com.uy/*", "https://listado.mercadolibre.com.uy/*", "https://mercadolibre.com.co/*", "https://listado.mercadolibre.com.co/*"]
+    }
+  ],
+  "content_scripts": [
+    {
+      "css": ["css/style.css"],
+      "matches": ["https://mercadolibre.com.uy/*", "https://listado.mercadolibre.com.uy/*", "https://mercadolibre.com.co/*", "https://listado.mercadolibre.com.co/*"],
+      "js": ["js/content_script.js"],
+      "run_at": "document_end"
+    }
+  ],
   "options_page": "options.html",
-  "permissions": [],
-  "host_permissions": [
-    "https://www.ebay.com/*",
-    "https://www.amazon.com/*",
-    "https://amazon.com/*",
-    "https://ebay.com/*",
-    "https://mercadolibre.com.uy/*",
-    "https://listado.mercadolibre.com.uy/*",
-    "https://mercadolibre.com.co/*",
-    "https://listado.mercadolibre.com.co/*"
-  ]
+  "permissions": ["storage"],
+  "host_permissions": ["https://www.ebay.com/*", "https://www.amazon.com/*", "https://amazon.com/*", "https://ebay.com/*", "https://mercadolibre.com.uy/*", "https://listado.mercadolibre.com.uy/*", "https://mercadolibre.com.co/*", "https://listado.mercadolibre.com.co/*"]
 }

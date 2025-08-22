@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test de Extensión MercadoLibre-eBay</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        line-height: 1.6;
+      }
+      .test-section {
+        background: #f5f5f5;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 8px;
+        border-left: 4px solid #007bff;
+      }
+      .success {
+        border-left-color: #28a745;
+        background: #d4edda;
+      }
+      .warning {
+        border-left-color: #ffc107;
+        background: #fff3cd;
+      }
+      .error {
+        border-left-color: #dc3545;
+        background: #f8d7da;
+      }
+      .feature-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+      }
+      .feature-card {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+      .feature-card h3 {
+        color: #007bff;
+        margin-top: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🛒 Test de la Extensión MercadoLibre-eBay</h1>
+
+    <div class="test-section success">
+      <h2>✅ Implementación Completada</h2>
+      <p>La extensión ha sido actualizada exitosamente con las siguientes características:</p>
+    </div>
+
+    <div class="feature-list">
+      <div class="feature-card">
+        <h3>🎨 Interfaz Moderna</h3>
+        <p>Nuevo diseño con Tailwind CSS, gradientes modernos y animaciones suaves</p>
+      </div>
+
+      <div class="feature-card">
+        <h3>🌍 Multiidioma</h3>
+        <p>Soporte para español y portugués con sistema de i18n de Chrome</p>
+      </div>
+
+      <div class="feature-card">
+        <h3>⚡ Control de Estado</h3>
+        <p>Habilitar/deshabilitar la extensión con toggle visual</p>
+      </div>
+
+      <div class="feature-card">
+        <h3>🔧 Personalización</h3>
+        <p>Ajustar tamaño de texto (pequeño, mediano, grande)</p>
+      </div>
+
+      <div class="feature-card">
+        <h3>🎭 Animaciones</h3>
+        <p>Control de animaciones para mejor rendimiento</p>
+      </div>
+
+      <div class="feature-card">
+        <h3>🔔 Notificaciones</h3>
+        <p>Sistema de notificaciones configurable</p>
+      </div>
+
+      <div class="feature-card">
+        <h3>💾 Persistencia</h3>
+        <p>Configuraciones guardadas con Chrome Storage API</p>
+      </div>
+
+      <div class="feature-card">
+        <h3>🧪 Accesibilidad</h3>
+        <p>Diseño responsive y compatible con lectores de pantalla</p>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h2>📋 Instrucciones de Prueba</h2>
+      <ol>
+        <li>Carga la extensión en Chrome (Desarrollador → Cargar extensión sin empaquetar)</li>
+        <li>Haz clic en el ícono de la extensión para abrir el popup</li>
+        <li>Verifica que todos los toggles funcionen correctamente</li>
+        <li>Cambia el tamaño del texto y observa el feedback visual</li>
+        <li>Prueba el cambio de idioma (español ↔ portugués)</li>
+        <li>Guarda la configuración y recarga la extensión para verificar persistencia</li>
+      </ol>
+    </div>
+
+    <div class="test-section warning">
+      <h2>⚠️ Notas de Desarrollo</h2>
+      <ul>
+        <li>La extensión usa CDN de Tailwind CSS para simplicidad en desarrollo</li>
+        <li>Los archivos de idioma están en la carpeta <code>_locales/</code></li>
+        <li>Las configuraciones se guardan usando <code>chrome.storage.sync</code></li>
+        <li>El popup tiene un ancho mínimo de 380px para mejor UX</li>
+      </ul>
+    </div>
+
+    <div class="test-section">
+      <h2>🚀 Características Implementadas</h2>
+      <ul>
+        <li>✅ Reemplazó Bootstrap por Tailwind CSS</li>
+        <li>✅ Sistema de internacionalización completo (ES/PT)</li>
+        <li>✅ Interfaz moderna y user-friendly</li>
+        <li>✅ Toggle para habilitar/deshabilitar extensión</li>
+        <li>✅ Personalización de tamaño de texto</li>
+        <li>✅ Control de animaciones y notificaciones</li>
+        <li>✅ Persistencia de configuraciones</li>
+        <li>✅ Feedback visual con toasts</li>
+        <li>✅ Diseño responsive y accesible</li>
+        <li>✅ Integración con Chrome Storage API</li>
+      </ul>
+    </div>
+
+    <footer style="text-align: center; margin-top: 40px; color: #666">
+      <p>Desarrollado por Eduardo Airaudo | Extensión MercadoLibre-eBay v0.1.7</p>
+    </footer>
+  </body>
+</html>

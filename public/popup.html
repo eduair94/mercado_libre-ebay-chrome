@@ -1,21 +1,225 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>MercadoLibre - Ebay</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title data-i18n="popupTitle">Configuración del Comparador</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+    <style>
+      /* Custom styles for better Chrome extension UX */
+      body {
+        min-width: 380px;
+        min-height: 520px;
+      }
+      .toggle-switch {
+        transition: all 0.3s ease;
+      }
+      .toggle-switch:checked {
+        background-color: #10b981;
+      }
+
+      /* Toggle switch improvements */
+      .toggle-container {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+      }
+
+      .toggle-container input[type="checkbox"] {
+        position: absolute;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        cursor: pointer;
+        z-index: 2;
+      }
+
+      .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.3s;
+        border-radius: 12px;
+        z-index: 1;
+      }
+      .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 2px;
+        bottom: 2px;
+        background-color: white;
+        transition: 0.3s;
+        border-radius: 50%;
+      }
+
+      .toggle-container input:checked + .toggle-slider {
+        background-color: #10b981;
+      }
+
+      .toggle-container input:checked + .toggle-slider:before {
+        transform: translateX(20px);
+      }
+
+      .fade-in {
+        animation: fadeIn 0.5s ease-in;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      .settings-card {
+        transition: all 0.2s ease;
+      }
+      .settings-card:hover {
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      }
+    </style>
   </head>
-
-  <body>
-    <div class="p-3 card">
-      Extensión de MercadoLibre para comprar con los precios de Ebay Creada por <a href="https://www.linkedin.com/in/eduardo-airaudo/">Eduardo Airaudo</a>
-      Ahora funciona con amazon 😊
+  <body class="bg-gradient-to-br from-blue-50 to-indigo-100 p-0 m-0 font-sans">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 shadow-lg">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+            <span class="text-blue-600 font-bold text-sm">ML</span>
+          </div>
+          <div>
+            <h1 class="text-lg font-bold" data-i18n="popupTitle">Configuración del Comparador</h1>
+            <p class="text-blue-100 text-xs opacity-90">MercadoLibre ↔ eBay</p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-2">
+          <!-- Language Selector -->
+          <select id="languageSelect" class="bg-white bg-opacity-20 text-white text-xs rounded-md px-2 py-1 border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50">
+            <option value="es" class="text-gray-800">🇪🇸 ES</option>
+            <option value="pt" class="text-gray-800">🇵🇹 PT</option>
+          </select>
+        </div>
+      </div>
     </div>
-  </body>
 
-  <style>
-    .card {
-      min-width: 300px;
-    }
-  </style>
+    <!-- Main Content -->
+    <div class="p-4 space-y-4 fade-in">
+      <!-- Extension Status Card -->
+      <div class="settings-card bg-white rounded-xl p-4 shadow-md border border-gray-100">
+        <div class="flex justify-flex-start flex-col gap-4">
+          <div class="flex-1">
+            <h3 class="font-semibold text-gray-800 text-sm" data-i18n="enabledLabel">Estado de la Extensión</h3>
+            <p class="text-gray-500 text-xs mt-1" data-i18n="enabledDescription">Habilitar o deshabilitar la extensión</p>
+          </div>
+          <div class="flex items-center space-x-3">
+            <span id="statusText" class="text-sm font-medium text-green-600 min-w-[100px]" data-i18n="enabled">Habilitada</span>
+            <div class="toggle-container">
+              <input type="checkbox" id="enabledToggle" class="toggle-switch" checked />
+              <span class="toggle-slider"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Text Size Configuration -->
+      <div class="settings-card bg-white rounded-xl p-4 shadow-md border border-gray-100">
+        <h3 class="font-semibold text-gray-800 text-sm mb-3" data-i18n="textSizeLabel">Tamaño del Texto</h3>
+        <p class="text-gray-500 text-xs mb-4" data-i18n="textSizeDescription">Ajusta el tamaño del texto de la comparación</p>
+        <div class="grid grid-cols-3 gap-2">
+          <button class="text-size-btn px-3 py-2 text-xs bg-gray-100 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition-colors border border-transparent hover:border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-300" data-size="small">
+            <span data-i18n="textSizeSmall">Pequeño</span>
+            <div class="text-xs mt-1">12px</div>
+          </button>
+          <button class="text-size-btn px-3 py-2 text-xs bg-blue-500 text-white rounded-lg transition-colors border border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300" data-size="medium">
+            <span data-i18n="textSizeMedium">Mediano</span>
+            <div class="text-xs opacity-80 mt-1">14px</div>
+          </button>
+          <button class="text-size-btn px-3 py-2 text-xs bg-gray-100 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition-colors border border-transparent hover:border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-300" data-size="large">
+            <span data-i18n="textSizeLarge">Grande</span>
+            <div class="text-xs mt-1">16px</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Additional Settings -->
+      <div class="settings-card bg-white rounded-xl p-4 shadow-md border border-gray-100">
+        <h3 class="font-semibold text-gray-800 text-sm mb-4">Opciones Adicionales</h3>
+        <div class="space-y-3">
+          <!-- Animations Toggle -->
+          <div class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors">
+            <div class="flex-1">
+              <h4 class="text-sm font-medium text-gray-700" data-i18n="animationsLabel">Animaciones</h4>
+              <p class="text-xs text-gray-500" data-i18n="animationsDescription">Mostrar animaciones en las comparaciones</p>
+            </div>
+            <div class="toggle-container">
+              <input type="checkbox" id="animationsToggle" />
+              <span class="toggle-slider"></span>
+            </div>
+          </div>
+
+          <!-- Notifications Toggle -->
+          <div class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors">
+            <div class="flex-1">
+              <h4 class="text-sm font-medium text-gray-700" data-i18n="notificationsLabel">Notificaciones</h4>
+              <p class="text-xs text-gray-500" data-i18n="notificationsDescription">Mostrar notificaciones de precios encontrados</p>
+            </div>
+            <div class="toggle-container">
+              <input type="checkbox" id="notificationsToggle" checked />
+              <span class="toggle-slider"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex space-x-3 pt-2">
+        <button id="saveBtn" class="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-300 shadow-lg">
+          <span class="flex items-center justify-center space-x-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span data-i18n="saveButton">Guardar Configuración</span>
+          </span>
+        </button>
+        <button id="resetBtn" class="px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-semibold text-sm transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-gray-300">
+          <span class="flex items-center justify-center space-x-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+            <span data-i18n="resetButton">Restablecer</span>
+          </span>
+        </button>
+      </div>
+
+      <!-- About Section -->
+      <div class="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 mt-4 border border-gray-200">
+        <h3 class="font-semibold text-gray-800 text-sm mb-2" data-i18n="aboutTitle">Acerca de</h3>
+        <p class="text-xs text-gray-600 mb-3" data-i18n="aboutDescription">Extensión desarrollada por Eduardo Airaudo para comparar precios de productos entre MercadoLibre y eBay de manera eficiente.</p>
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-gray-500"> <span data-i18n="versionLabel">Versión</span>: <span id="versionNumber">0.1.7</span> </span>
+          <a href="#" class="text-xs text-blue-600 hover:text-blue-800 font-medium">Eduardo Airaudo</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 left-4 right-4 bg-green-500 text-white p-3 rounded-lg shadow-lg transform translate-y-full transition-transform duration-300 ease-out hidden toast">
+      <div class="flex items-center space-x-3">
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <span id="toastMessage" class="text-sm font-medium">¡Configuración guardada!</span>
+      </div>
+    </div>
+
+    <script src="js/popup.js"></script>
+  </body>
 </html>

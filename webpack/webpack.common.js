@@ -38,6 +38,9 @@ module.exports = {
       resourceRegExp: /^\.\/locale$/,
       contextRegExp: /moment$/,
     }),
-    new CopyPlugin([{ from: ".", to: "../" }], { context: "public" }),
+    new CopyPlugin([
+      { from: ".", to: "../" }, // Copy public folder contents
+      { from: "../_locales", to: "../_locales" } // Copy locales folder
+    ], { context: "public" }),
   ],
 };
