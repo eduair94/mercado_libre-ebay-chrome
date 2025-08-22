@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Price Extraction Test</title>
+  </head>
+  <body>
+    <h1>Testing Price Extraction</h1>
+
+    <!-- Test case 1: UYU price -->
+    <div class="test-item-1">
+      <div class="poly-component__price">
+        <div class="poly-price__current">
+          <span class="andes-money-amount andes-money-amount--cents-superscript" role="img" aria-label="1230 pesos uruguayos">
+            <span class="andes-money-amount__currency-symbol" aria-hidden="true">$</span>
+            <span class="andes-money-amount__fraction" aria-hidden="true">1.230</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Test case 2: USD price -->
+    <div class="test-item-2">
+      <div class="poly-component__price">
+        <div class="poly-price__current">
+          <span class="andes-money-amount andes-money-amount--cents-superscript" role="img" aria-label="25 dolares">
+            <span class="andes-money-amount__currency-symbol" aria-hidden="true">US$</span>
+            <span class="andes-money-amount__fraction" aria-hidden="true">25</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Test case 3: Alternative USD format -->
+    <div class="test-item-3">
+      <div class="poly-component__price">
+        <div class="poly-price__current">
+          <span class="andes-money-amount andes-money-amount--cents-superscript" role="img" aria-label="42 dolares">
+            <span class="andes-money-amount__currency-symbol" aria-hidden="true">U$S</span>
+            <span class="andes-money-amount__fraction" aria-hidden="true">42</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Simulate the getMercadoLibrePrice function
+      const SELECTORS = {
+        PRICE_CURRENCY_NEW: ".poly-price__current .andes-money-amount__currency-symbol, .poly-component__price .andes-money-amount__currency-symbol",
+        PRICE_FRACTION_NEW: ".poly-price__current .andes-money-amount__fraction, .poly-component__price .andes-money-amount__fraction",
+      };
+
+      function getMercadoLibrePrice(item) {
+        const defaultPrice = { currency: "UYU", price: 0 };
+
+        try {
+          const currencyElement = item.querySelector(SELECTORS.PRICE_CURRENCY_NEW);
+          const priceElement = item.querySelector(SELECTORS.PRICE_FRACTION_NEW);
+
+          if (currencyElement && priceElement) {
+            const currencyText = currencyElement.innerHTML.trim();
+            const priceText = priceElement.innerHTML.replace(/\./g, "").replace(/,/g, "");
+            const price = parseFloat(priceText);
+
+            // Determine currency based on symbol
+            let currency = "UYU";
+            if (currencyText.includes("US$") || currencyText.includes("U$S")) {
+              currency = "USD";
+            } else if (currencyText === "$") {
+              currency = "UYU";
+            }
+
+            return {
+              currency: currency,
+              price: price,
+            };
+          }
+        } catch (e) {
+          console.warn("Error getting MercadoLibre price:", e);
+        }
+
+        return defaultPrice;
+      }
+
+      // Test the function
+      const testItem1 = document.querySelector(".test-item-1");
+      const testItem2 = document.querySelector(".test-item-2");
+      const testItem3 = document.querySelector(".test-item-3");
+
+      console.log("Test 1 (UYU):", getMercadoLibrePrice(testItem1));
+      console.log("Test 2 (US$):", getMercadoLibrePrice(testItem2));
+      console.log("Test 3 (U$S):", getMercadoLibrePrice(testItem3));
+
+      // Display results
+      document.body.innerHTML += `
+            <h2>Test Results:</h2>
+            <p>Test 1 ($ symbol): ${JSON.stringify(getMercadoLibrePrice(testItem1))}</p>
+            <p>Test 2 (US$ symbol): ${JSON.stringify(getMercadoLibrePrice(testItem2))}</p>
+            <p>Test 3 (U$S symbol): ${JSON.stringify(getMercadoLibrePrice(testItem3))}</p>
+        `;
+    </script>
+  </body>
+</html>

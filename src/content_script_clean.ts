@@ -11,9 +11,9 @@ const SELECTORS = {
 
   // Price selectors
   PRICE_CURRENCY_OLD: ".ui-search-price__second-line .andes-money-amount__currency-symbol",
-  PRICE_CURRENCY_NEW: ".poly-price__current .andes-money-amount__currency-symbol",
+  PRICE_CURRENCY_NEW: ".poly-price__current .andes-money-amount__currency-symbol, .poly-component__price .andes-money-amount__currency-symbol",
   PRICE_FRACTION_OLD: ".ui-search-price__second-line .andes-money-amount__fraction",
-  PRICE_FRACTION_NEW: ".poly-price__current .andes-money-amount__fraction",
+  PRICE_FRACTION_NEW: ".poly-price__current .andes-money-amount__fraction, .poly-component__price .andes-money-amount__fraction",
 
   // Button selectors
   BUTTON_CONTAINER: ".btn_ml_app_container",
@@ -145,16 +145,28 @@ function getProductTitle(item: Element): string | null {
  * Gets MercadoLibre price from an item
  */
 function getMercadoLibrePrice(item: Element): MLPrice {
-  const defaultPrice: MLPrice = { currency: "USD", price: 0 };
+  const defaultPrice: MLPrice = { currency: "UYU", price: 0 };
 
   try {
     const currencyElement = item.querySelector(`${SELECTORS.PRICE_CURRENCY_NEW}, ${SELECTORS.PRICE_CURRENCY_OLD}`);
     const priceElement = item.querySelector(`${SELECTORS.PRICE_FRACTION_NEW}, ${SELECTORS.PRICE_FRACTION_OLD}`);
 
     if (currencyElement && priceElement) {
+      const currencyText = currencyElement.innerHTML.trim();
+      const priceText = priceElement.innerHTML.replace(/\./g, "").replace(/,/g, "");
+      const price = parseFloat(priceText);
+
+      // Determine currency based on symbol
+      let currency = "UYU";
+      if (currencyText.includes("US$") || currencyText.includes("U$S")) {
+        currency = "USD";
+      } else if (currencyText === "$") {
+        currency = "UYU";
+      }
+
       return {
-        currency: currencyElement.innerHTML,
-        price: parseFloat(priceElement.innerHTML.replace(/\./g, "")),
+        currency: currency,
+        price: price,
       };
     }
   } catch (e) {

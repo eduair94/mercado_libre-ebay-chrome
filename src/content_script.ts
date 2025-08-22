@@ -11,9 +11,9 @@ const SELECTORS = {
 
   // Price selectors
   PRICE_CURRENCY_OLD: ".ui-search-price__second-line .andes-money-amount__currency-symbol",
-  PRICE_CURRENCY_NEW: ".poly-price__current .andes-money-amount__currency-symbol",
+  PRICE_CURRENCY_NEW: ".poly-price__current .andes-money-amount__currency-symbol, .poly-component__price .andes-money-amount__currency-symbol",
   PRICE_FRACTION_OLD: ".ui-search-price__second-line .andes-money-amount__fraction",
-  PRICE_FRACTION_NEW: ".poly-price__current .andes-money-amount__fraction",
+  PRICE_FRACTION_NEW: ".poly-price__current .andes-money-amount__fraction, .poly-component__price .andes-money-amount__fraction",
 
   // Button selectors
   BUTTON_CONTAINER: ".btn_ml_app_container",
@@ -91,46 +91,50 @@ function wordCoincidence(str1: string, str2: string): number {
 
 /**
  * Finds the most similar product from a list
+ * Disabled as its not working as expected.
  */
 function findMostSimilarProduct(target: string, products: Item[]): Item | null {
-  if (!products || products.length === 0) return null;
-  if (!target) return products[0];
+  // if (!products || products.length === 0) return null;
+  // if (!target) return products[0];
 
-  let maxScore = 0;
-  let bestMatch: Item | null = null;
+  // let maxScore = 0;
+  // let bestMatch: Item | null = null;
 
-  for (const product of products) {
-    const score = wordCoincidence(target, product.name);
-    const adjustedScore = product.price > 0 ? score + 5 : score;
+  // for (const product of products) {
+  //   const score = wordCoincidence(target, product.name);
+  //   const adjustedScore = product.price > 0 ? score + 5 : score;
 
-    if (adjustedScore > maxScore) {
-      maxScore = adjustedScore;
-      bestMatch = product;
-    }
-  }
+  //   if (adjustedScore > maxScore) {
+  //     maxScore = adjustedScore;
+  //     bestMatch = product;
+  //   }
+  // }
 
-  return bestMatch || products[0];
+  // return bestMatch || products[0];
+  return products[0];
 }
 
 /**
  * Optimizes search query
+ * Disabled by now as its not working as expected
  */
 function optimizeSearchQuery(productName: string): string {
-  if (!productName) return "";
+  // if (!productName) return "";
 
-  let cleanQuery = productName
-    .toLowerCase()
-    .replace(/marca\s+/g, "")
-    .replace(/color\s+\w+/g, "")
-    .replace(/\b(para|de|con|sin|en|la|el|los|las|un|una)\b/g, "")
-    .replace(/[^\w\s-]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  // let cleanQuery = productName
+  //   .toLowerCase()
+  //   .replace(/marca\s+/g, "")
+  //   .replace(/color\s+\w+/g, "")
+  //   .replace(/\b(para|de|con|sin|en|la|el|los|las|un|una)\b/g, "")
+  //   .replace(/[^\w\s-]/g, " ")
+  //   .replace(/\s+/g, " ")
+  //   .trim();
 
-  const words = cleanQuery.split(" ").filter((word) => word.length > 2);
-  const optimizedQuery = words.slice(0, 8).join(" ");
+  // const words = cleanQuery.split(" ").filter((word) => word.length > 2);
+  // const optimizedQuery = words.slice(0, 8).join(" ");
 
-  return optimizedQuery || productName;
+  // return optimizedQuery || productName;
+  return productName;
 }
 
 /**
@@ -145,16 +149,28 @@ function getProductTitle(item: Element): string | null {
  * Gets MercadoLibre price from an item
  */
 function getMercadoLibrePrice(item: Element): MLPrice {
-  const defaultPrice: MLPrice = { currency: "USD", price: 0 };
+  const defaultPrice: MLPrice = { currency: "UYU", price: 0 };
 
   try {
     const currencyElement = item.querySelector(`${SELECTORS.PRICE_CURRENCY_NEW}, ${SELECTORS.PRICE_CURRENCY_OLD}`);
     const priceElement = item.querySelector(`${SELECTORS.PRICE_FRACTION_NEW}, ${SELECTORS.PRICE_FRACTION_OLD}`);
 
     if (currencyElement && priceElement) {
+      const currencyText = currencyElement.innerHTML.trim();
+      const priceText = priceElement.innerHTML.replace(/\./g, "").replace(/,/g, "");
+      const price = parseFloat(priceText);
+
+      // Determine currency based on symbol
+      let currency = "UYU";
+      if (currencyText.includes("US$") || currencyText.includes("U$S")) {
+        currency = "USD";
+      } else if (currencyText === "$") {
+        currency = "UYU";
+      }
+
       return {
-        currency: currencyElement.innerHTML,
-        price: parseFloat(priceElement.innerHTML.replace(/\./g, "")),
+        currency: currency,
+        price: price,
       };
     }
   } catch (e) {
@@ -209,23 +225,27 @@ function currencyConversion(item: Item, currencySymbol = "UYU"): CurrencyConvers
 /**
  * Creates search URL for platform
  */
-function createSearchURL(platform: "ebay" | "amazon", query: string): string {
+function createSearchURL(platform: "ebay" | "amazon", query: string, maxPrice?: number): string {
   const optimizedQuery = optimizeSearchQuery(query);
 
   if (platform === "ebay") {
-    return (
-      "https://www.ebay.com/sch/i.html?" +
-      new URLSearchParams({
-        _nkw: optimizedQuery,
-        _sacat: "0",
-        LH_BIN: "1",
-        _sop: "15",
-        rt: "nc",
-        LH_ItemCondition: "1000|1500|2000|2500|3000",
-        _pgn: "1",
-        _skc: "50",
-      }).toString()
-    );
+    const searchParams: Record<string, string> = {
+      _nkw: optimizedQuery,
+      _sacat: "0",
+      LH_BIN: "1",
+      _sop: "15",
+      rt: "nc",
+      LH_ItemCondition: "1000|1500|2000|2500|3000",
+      _pgn: "1",
+      _skc: "50",
+    };
+
+    // Add max price filter if provided
+    if (maxPrice && maxPrice > 0) {
+      searchParams._udhi = Math.floor(maxPrice).toString();
+    }
+
+    return "https://www.ebay.com/sch/i.html?" + new URLSearchParams(searchParams).toString();
   } else {
     return (
       "https://www.amazon.com/s?" +
@@ -267,7 +287,22 @@ function createButtonClickHandler(platform: "ebay" | "amazon", productName: stri
     button.disabled = true;
 
     try {
-      const searchURL = createSearchURL(platform, productName);
+      // Get MercadoLibre price for filtering
+      const mlPrice = getMercadoLibrePrice(item);
+      let maxPriceUSD: number | undefined;
+
+      // Convert ML price to USD for eBay filtering
+      if (mlPrice.price > 0) {
+        if (mlPrice.currency === "USD") {
+          maxPriceUSD = mlPrice.price;
+        } else if (mlPrice.currency === "UYU" && currenciesData && currenciesData["UYU"]?.["USD"]) {
+          // Convert UYU to USD
+          const usdRate = currenciesData["UYU"]["USD"];
+          maxPriceUSD = mlPrice.price / usdRate;
+        }
+      }
+
+      const searchURL = createSearchURL(platform, productName, platform === "ebay" ? maxPriceUSD : undefined);
       const response = await sendMessagePromise({
         url: searchURL,
         msg: "request",
@@ -295,9 +330,8 @@ function createButtonClickHandler(platform: "ebay" | "amazon", productName: stri
       const country = window.location.hostname.split(".").pop()?.toLowerCase() || "uy";
       const currencySymbol = CURRENCY_MAPPING[country as keyof typeof CURRENCY_MAPPING] || "UYU";
       const { priceRaw } = currencyConversion(bestMatch, currencySymbol);
-      const mlPrice = getMercadoLibrePrice(item);
 
-      const isBetterPrice = mlPrice.currency === "U$S" ? bestMatch.price < mlPrice.price : priceRaw < mlPrice.price;
+      const isBetterPrice = mlPrice.currency === "USD" ? bestMatch.price < mlPrice.price : priceRaw < mlPrice.price;
 
       const className = isBetterPrice ? "btn_ml_success" : "btn_ml_danger";
       const icon = isBetterPrice ? "💰 " : "⚠️ ";

@@ -31,7 +31,6 @@
   color: white !important;
   outline: none;
   box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.4);
-  transform: translateY(-1px);
 }
 
 .btn_ml_app:hover {
@@ -39,7 +38,6 @@
   text-decoration: none !important;
   background: linear-gradient(45deg, #5f3dc4, #7c3aed);
   box-shadow: 0 4px 12px rgba(108, 92, 231, 0.4);
-  transform: translateY(-2px);
 }
 
 .btn_ml_app:disabled {
@@ -165,7 +163,6 @@
 
 .btn_ml_app_container:hover {
   opacity: 1;
-  transform: translateY(-2px);
   box-shadow: 0 5px 16px rgba(0, 0, 0, 0.2);
 }
 
@@ -180,7 +177,6 @@
 .btn_ml_success:hover {
   background: linear-gradient(135deg, #219a52, #27ae60) !important;
   box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4) !important;
-  transform: translateY(-2px);
 }
 
 .btn_ml_danger {
@@ -193,7 +189,6 @@
 .btn_ml_danger:hover {
   background: linear-gradient(135deg, #c0392b, #a93226) !important;
   box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4) !important;
-  transform: translateY(-2px);
 }
 
 /* Price comparison indicators */
@@ -206,7 +201,6 @@
   position: absolute;
   left: -20px;
   top: 50%;
-  transform: translateY(-50%);
   font-size: 14px;
 }
 
@@ -219,7 +213,6 @@
   position: absolute;
   left: -20px;
   top: 50%;
-  transform: translateY(-50%);
   font-size: 14px;
 }
 
