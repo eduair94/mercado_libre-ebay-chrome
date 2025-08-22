@@ -9,5 +9,8 @@
             "url": "http://json.schemastore.org/chrome-manifest"
         }
     ],
-    "nuxt.isNuxtApp": false
+    "nuxt.isNuxtApp": false,
+    "cSpell.words": [
+        "ebay"
+    ]
 }

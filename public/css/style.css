@@ -1,99 +1,285 @@
 .btn_ml_app {
-  z-index:10;
-  position:relative;
-  border-radius:15px;
-  font-size: 14px;
-  padding: 6px 12px;
-  margin-bottom: 0;
-  display: inline-block;
-  text-decoration: none;
+  z-index: 10;
+  position: relative;
+  border-radius: 6px;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 4px 8px;
+  margin: 0;
+  display: block;
+  width: 100%;
+  text-decoration: none !important;
   text-align: center;
   white-space: nowrap;
-  vertical-align: middle;
-  -ms-touch-action: manipulation;
-  touch-action: manipulation;
   cursor: pointer;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
   user-select: none;
   background-image: none;
-  border: 1px solid transparent;
-  transition: 0.25s;
-  color:black;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+  color: white !important;
+  background: linear-gradient(45deg, #6c5ce7, #a29bfe);
+  box-shadow: 0 2px 6px rgba(108, 92, 231, 0.3);
+  min-height: 24px;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  min-width: 75px;
 }
 
 .btn_ml_app:focus,
-.btn_ml_app:active:focus, 
+.btn_ml_app:active:focus,
 .btn_ml_app:active {
-  color:white;
-  outline: thin dotted;
-  outline: 5px auto -webkit-focus-ring-color;
-  outline-offset: -2px;
-  background: #2d3277;
+  color: white !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.4);
+  transform: translateY(-1px);
 }
+
 .btn_ml_app:hover {
-  color: white;
-  text-decoration: none;
-  box-shadow: inset 0 0 0 2em #2d3277;
+  color: white !important;
+  text-decoration: none !important;
+  background: linear-gradient(45deg, #5f3dc4, #7c3aed);
+  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.4);
+  transform: translateY(-2px);
+}
+
+.btn_ml_app:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  background: linear-gradient(45deg, #95a5a6, #bdc3c7);
+  box-shadow: 0 2px 4px rgba(149, 165, 166, 0.3);
+}
+
+/* eBay specific styling */
+.ebay_btn {
+  background: linear-gradient(45deg, #e74c3c, #c0392b) !important;
+  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3) !important;
+}
+
+.ebay_btn:hover {
+  background: linear-gradient(45deg, #c0392b, #a93226) !important;
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4) !important;
+}
+
+/* Amazon specific styling */
+.amazon_btn {
+  background: linear-gradient(45deg, #f39c12, #e67e22) !important;
+  box-shadow: 0 2px 8px rgba(243, 156, 18, 0.3) !important;
+}
+
+.amazon_btn:hover {
+  background: linear-gradient(45deg, #e67e22, #d35400) !important;
+  box-shadow: 0 4px 12px rgba(243, 156, 18, 0.4) !important;
+}
+
+/* Results styling */
+.ebay_content,
+.amazon_content {
+  z-index: 10;
+  position: relative;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 3px 4px;
+  margin: 0;
+  display: block;
+  width: 100%;
+  text-align: center;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  user-select: none;
+  border-radius: 6px;
+  min-height: 24px;
+  max-height: 36px;
+  border: 2px solid;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  min-width: 75px;
+  line-height: 1.1;
+  word-wrap: break-word;
+}
+
+.ebay_content small,
+.amazon_content small {
+  font-size: 6px !important;
+  line-height: 1;
+  display: block;
+  max-height: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ebay_content {
-  z-index:10;
-  position:relative;
-  color: black;
-  font-size: 14px;
-  padding: 6px 12px;
-  margin-bottom: 0;
-  display: inline-block;
-  text-decoration: none;
-  text-align: center;
-  white-space: nowrap;
-  vertical-align: middle;
-  -ms-touch-action: manipulation;
-  touch-action: manipulation;
-  cursor: pointer;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  background-image: none;
-  border: 1px solid transparent;
-  background: rgb(240, 240, 240);
-  min-height: 34px;
-  border-radius:10px;
+  background: linear-gradient(135deg, #fff, #f8f9fa);
+  border-color: #e74c3c;
+}
+
+.amazon_content {
+  background: linear-gradient(135deg, #fff, #f8f9fa);
+  border-color: #f39c12;
+}
+
+/* Link styling inside results */
+.ebay_content a,
+.amazon_content a {
+  color: inherit !important;
+  text-decoration: none !important;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ebay_content a:hover,
+.amazon_content a:hover,
+.ebay_content a:visited,
+.amazon_content a:visited,
+.ebay_content a:active,
+.amazon_content a:active,
+.ebay_content a:focus,
+.amazon_content a:focus {
+  color: inherit !important;
+  text-decoration: none !important;
 }
 
 .btn_ml_app_container {
+  position: absolute;
+  width: 100%;
+  top: 0;
+  left: 0;
   display: flex;
-  padding-top: 8px;
-  gap: 10px;
-  max-width:100%;
-  flex-wrap:wrap;
+  flex-direction: column;
+  gap: 3px;
+  z-index: 1000;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 249, 250, 0.95));
+  border-radius: 8px;
+  padding: 6px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.2s ease;
+  opacity: 0.9;
+  max-width: 150px;
 }
 
+.btn_ml_app_container:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.2);
+}
 
+/* Success/Danger indicators */
 .btn_ml_success {
-  background-color: #28a745;
+  background: linear-gradient(135deg, #27ae60, #2ecc71) !important;
+  border-color: #27ae60 !important;
+  color: white !important;
+  box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3) !important;
 }
 
-a.btn_ml_success,
-a.btn_ml_danger {
-  color:white;
-  font-weight:bold;
-}
-
-a.btn_ml_success:hover,
-a.btn_ml_danger:hover,
-a.btn_ml_success:active,
-a.btn_ml_danger:active,
-a.btn_ml_success:focus,
-a.btn_ml_danger:focus
-{
-  color:white;
-  opacity: 0.8;
+.btn_ml_success:hover {
+  background: linear-gradient(135deg, #219a52, #27ae60) !important;
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4) !important;
+  transform: translateY(-2px);
 }
 
 .btn_ml_danger {
-  background-color:#dc3545;
+  background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+  border-color: #e74c3c !important;
+  color: white !important;
+  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3) !important;
+}
+
+.btn_ml_danger:hover {
+  background: linear-gradient(135deg, #c0392b, #a93226) !important;
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4) !important;
+  transform: translateY(-2px);
+}
+
+/* Price comparison indicators */
+.price-better {
+  position: relative;
+}
+
+.price-better::before {
+  content: "💰";
+  position: absolute;
+  left: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+}
+
+.price-worse {
+  position: relative;
+}
+
+.price-worse::before {
+  content: "⚠️";
+  position: absolute;
+  left: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+}
+
+/* Loading state animation */
+.btn_ml_app[disabled] {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn_ml_app[disabled]::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .btn_ml_app {
+    font-size: 8px;
+    padding: 3px 6px;
+    min-height: 20px;
+    min-width: 65px;
+  }
+
+  .btn_ml_app_container {
+    gap: 2px;
+    padding: 4px;
+    max-width: 75px;
+  }
+
+  .ebay_content,
+  .amazon_content {
+    font-size: 16px;
+    padding: 3px 4px;
+    min-height: 20px;
+    min-width: 65px;
+  }
+}
+
+/* Ensure MercadoLibre product cards have proper structure for button placement */
+.ui-search-result,
+.poly-card {
+  position: relative !important;
+}
+
+.ui-search-layout .ui-search-result,
+.ui-search-layout .poly-card {
+  position: relative !important;
 }

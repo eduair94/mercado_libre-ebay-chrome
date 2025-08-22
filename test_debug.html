@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MercadoLibre Test Page</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background: #fff3cd;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .ui-search-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .poly-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 16px;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        margin-bottom: 16px;
+      }
+      .poly-card__content {
+        padding: 8px;
+      }
+      .poly-component__title-wrapper {
+        margin-bottom: 12px;
+      }
+      .poly-component__title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+        text-decoration: none;
+        display: block;
+        line-height: 1.3;
+        margin: 0;
+      }
+      .poly-price {
+        margin: 8px 0;
+      }
+      .poly-price__current {
+        font-size: 24px;
+        font-weight: 700;
+        color: #00a650;
+      }
+      .andes-money-amount__currency-symbol {
+        font-size: 16px;
+        vertical-align: top;
+      }
+      .andes-money-amount__fraction {
+        font-size: 24px;
+      }
+      .debug-panel {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        width: 300px;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 10px;
+        font-size: 12px;
+        z-index: 9999;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+      .debug-panel h3 {
+        margin: 0 0 10px 0;
+        font-size: 14px;
+      }
+      .btn_ml_app_container {
+        margin: 10px 0;
+        padding: 8px;
+        background: #f0f8ff;
+        border-radius: 4px;
+        border-left: 3px solid #007bff;
+      }
+      .btn_ml_app {
+        margin: 3px;
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: bold;
+      }
+      .ebay_btn {
+        background: #e53e3e;
+        color: white;
+      }
+      .amazon_btn {
+        background: #ff9500;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🛒 Página de Prueba MercadoLibre</h1>
+      <p><strong>URL:</strong> <span id="current-url"></span></p>
+
+      <div class="debug-panel">
+        <h3>🔧 Debug Panel</h3>
+        <div id="debug-output"></div>
+      </div>
+
+      <div class="ui-search-layout">
+        <!-- Producto 1 -->
+        <div class="poly-card">
+          <div class="poly-card__content">
+            <div class="poly-component__title-wrapper">
+              <h2 class="poly-component__title">iPhone 14 Pro Max 256GB Morado Oscuro</h2>
+            </div>
+            <div class="poly-price">
+              <div class="poly-price__current">
+                <span class="andes-money-amount__currency-symbol">$</span>
+                <span class="andes-money-amount__fraction">89.999</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Producto 2 -->
+        <div class="poly-card">
+          <div class="poly-card__content">
+            <div class="poly-component__title-wrapper">
+              <h2 class="poly-component__title">Samsung Galaxy S23 Ultra 512GB Negro</h2>
+            </div>
+            <div class="poly-price">
+              <div class="poly-price__current">
+                <span class="andes-money-amount__currency-symbol">$</span>
+                <span class="andes-money-amount__fraction">75.490</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Producto 3 -->
+        <div class="poly-card">
+          <div class="poly-card__content">
+            <div class="poly-component__title-wrapper">
+              <h2 class="poly-component__title">MacBook Air M2 13" 256GB Gris Espacial</h2>
+            </div>
+            <div class="poly-price">
+              <div class="poly-price__current">
+                <span class="andes-money-amount__currency-symbol">$</span>
+                <span class="andes-money-amount__fraction">125.999</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Mock MercadoLibre URL
+      const currentUrl = "https://listado.mercadolibre.com.uy/electronica/celulares-telefonia/celulares-smartphones/";
+      document.getElementById("current-url").textContent = currentUrl;
+
+      // Capture console logs and display them
+      const debugOutput = document.getElementById("debug-output");
+      const originalLog = console.log;
+
+      console.log = function (...args) {
+        originalLog.apply(console, args);
+        const logEntry = document.createElement("div");
+        logEntry.style.marginBottom = "5px";
+        logEntry.style.fontSize = "11px";
+        logEntry.style.borderBottom = "1px solid #eee";
+        logEntry.style.paddingBottom = "3px";
+
+        const timestamp = new Date().toLocaleTimeString();
+        logEntry.innerHTML = `<strong>${timestamp}:</strong> ${args.join(" ")}`;
+        debugOutput.appendChild(logEntry);
+        debugOutput.scrollTop = debugOutput.scrollHeight;
+      };
+
+      // Override location.href for testing
+      Object.defineProperty(window, "location", {
+        value: { href: currentUrl },
+        writable: false,
+      });
+
+      console.log("🧪 Test page loaded!");
+      console.log("🌐 Simulated URL:", currentUrl);
+      console.log("📄 Document ready state:", document.readyState);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test New MercadoLibre Selectors</title>
+    <style>
+      .poly-card {
+        border: 1px solid #ccc;
+        margin: 10px;
+        padding: 10px;
+        background: white;
+      }
+      .poly-component__title {
+        font-weight: bold;
+        color: #333;
+        margin: 5px 0;
+      }
+      .poly-component__title-wrapper {
+        margin-bottom: 10px;
+      }
+      .poly-price__current {
+        font-size: 18px;
+        color: #00a650;
+        font-weight: bold;
+      }
+      .poly-card__content {
+        padding: 10px;
+      }
+      .btn_ml_app_container {
+        margin: 10px 0;
+      }
+      .btn_ml_app {
+        margin: 5px;
+        padding: 8px 12px;
+        background: #3483fa;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="ui-search-layout">
+      <!-- New HTML structure example -->
+      <div class="poly-card">
+        <div class="poly-card__content">
+          <div class="poly-component__title-wrapper">
+            <h2 class="poly-component__title">Smartphone Samsung Galaxy A54 5G 128gb</h2>
+          </div>
+          <div class="poly-price">
+            <div class="poly-price__current">
+              <span class="andes-money-amount__currency-symbol">$</span>
+              <span class="andes-money-amount__fraction">45.990</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Another example -->
+      <div class="poly-card">
+        <div class="poly-card__content">
+          <div class="poly-component__title-wrapper">
+            <h2 class="poly-component__title">Apple iPhone 14 Pro Max 256GB</h2>
+          </div>
+          <div class="poly-price">
+            <div class="poly-price__current">
+              <span class="andes-money-amount__currency-symbol">$</span>
+              <span class="andes-money-amount__fraction">89.999</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Simulate the content script logic
+      const items = document.querySelectorAll(".ui-search-layout .ui-search-result, .ui-search-layout .poly-card");
+      console.log("Total items found:", items.length);
+
+      items.forEach((item, index) => {
+        const titleElement = item.querySelector(".ui-search-item__title, .poly-component__title");
+        const name = titleElement?.textContent;
+        console.log(`Item ${index + 1}: "${name}"`);
+
+        if (name) {
+          const element = document.createElement("div");
+          element.innerHTML = `<div class="btn_ml_app_container"><button class="ebay_btn btn_ml_app">EBAY PRICE</button><button class="amazon_btn btn_ml_app">AMAZON PRICE</button></div>`;
+
+          const targetElement = item.querySelector(".ui-search-item__group--title, .poly-component__title-wrapper") || item.querySelector(".poly-card__content");
+
+          if (targetElement) {
+            targetElement.appendChild(element);
+            console.log(`Buttons added to item: "${name}"`);
+          } else {
+            console.log(`No target element found for item: "${name}"`);
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
