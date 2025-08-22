@@ -5,7 +5,8 @@ class AmazonFront extends StoreFront {
   origin = "https://amazon.com";
   parseHTML(data: string): ParseHTMLResult {
     const productContainer = '.s-result-item[data-component-type="s-search-result"]';
-    const nameSel = "h2 .a-link-normal";
+    const nameSel = "a.a-link-normal.s-line-clamp-2 h2 span";
+    const linkSel = "a.a-link-normal.s-line-clamp-2";
     const priceSel = ".a-price-whole";
     const priceFraction = ".a-price-fraction";
 
@@ -15,9 +16,18 @@ class AmazonFront extends StoreFront {
       const txt = (el.querySelector(priceSel)?.textContent || "") + (el.querySelector(priceFraction)?.textContent || "0");
       console.log("txt", txt);
       const { currency, price } = this.getPriceData(txt);
+
+      // Get the name from the h2 span inside the link
+      const nameElement = el.querySelector(nameSel);
+      const name = nameElement ? nameElement.textContent?.trim() || "" : "";
+
+      // Get the link from the a element
+      const linkElement = el.querySelector(linkSel);
+      const href = linkElement ? linkElement.getAttribute("href") : null;
+
       return {
         image: "",
-        name: (el.querySelector(nameSel)?.textContent || "").trim(),
+        name,
         currency,
         price,
         location: "",
@@ -28,7 +38,7 @@ class AmazonFront extends StoreFront {
         watchCount: 0,
         soldCount: 0,
         bidCount: 0,
-        link: this.fixLink(el.querySelector(nameSel)?.getAttribute("href")),
+        link: this.fixLink(href),
       };
     });
 

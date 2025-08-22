@@ -3,7 +3,8 @@ class StoreFront {
   fixLocation(location: string) {
     return location.replace("from", "").trim();
   }
-  fixLink(link: string) {
+  fixLink(link: string | null) {
+    if (!link) return "";
     if (link.startsWith("http")) return link;
     console.log("origin", this.origin);
     return this.origin + link;

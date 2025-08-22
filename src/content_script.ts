@@ -303,6 +303,7 @@ function createButtonClickHandler(platform: "ebay" | "amazon", productName: stri
       }
 
       const searchURL = createSearchURL(platform, productName, platform === "ebay" ? maxPriceUSD : undefined);
+      console.log("Search url amazon", searchURL);
       const response = await sendMessagePromise({
         url: searchURL,
         msg: "request",

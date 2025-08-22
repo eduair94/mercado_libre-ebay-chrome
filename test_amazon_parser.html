@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Test Amazon Parser</title>
+  </head>
+  <body>
+    <h1>Amazon Parser Test</h1>
+    <div id="results"></div>
+
+    <script>
+      // Import the compiled content script
+      const script = document.createElement("script");
+      script.src = "dist/content_script.js";
+      document.head.appendChild(script);
+
+      script.onload = function () {
+        // Test the parser with a sample HTML
+        fetch("samples/amazonSampleHtml.html")
+          .then((response) => response.text())
+          .then((html) => {
+            // Test the parser
+            if (window.amazonFront) {
+              const results = window.amazonFront.parseHTML(html);
+              document.getElementById("results").innerHTML = `
+                            <h2>Parsing Results:</h2>
+                            <p>Total items found: ${results.items.length}</p>
+                            <pre>${JSON.stringify(results.items.slice(0, 3), null, 2)}</pre>
+                        `;
+              console.log("Amazon parser results:", results);
+            } else {
+              document.getElementById("results").innerHTML = "<p>Parser not loaded</p>";
+            }
+          })
+          .catch((error) => {
+            document.getElementById("results").innerHTML = `<p>Error: ${error}</p>`;
+          });
+      };
+    </script>
+  </body>
+</html>

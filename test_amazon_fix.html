@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Amazon Parser Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .error {
+        color: red;
+      }
+      .success {
+        color: green;
+      }
+      pre {
+        background: #f5f5f5;
+        padding: 10px;
+        border-radius: 5px;
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Amazon Parser Test</h1>
+    <div id="status">Loading...</div>
+    <div id="results"></div>
+
+    <script>
+      class StoreFront {
+        constructor() {
+          this.origin = "";
+        }
+
+        fixLink(link) {
+          if (!link) return "";
+          if (link.startsWith("http")) return link;
+          console.log("origin", this.origin);
+          return this.origin + link;
+        }
+
+        getPriceData(pr) {
+          let prNoSpaces = pr.replace(/\s/g, "");
+          const currencyMatch = prNoSpaces.match(/[A-Z]+/);
+          let priceMatch = prNoSpaces.match(/(\d{1,3}(,\d{3})*(\.\d{2})?)/g);
+          let currency = "USD";
+          let price = 0;
+          if (priceMatch) {
+            priceMatch[0] = priceMatch[0].replace(/\,/g, "");
+            price = parseFloat(priceMatch[0]);
+          }
+          if (price) {
+            if (currencyMatch) {
+              currency = currencyMatch[0];
+            }
+          } else {
+            currency = "";
+          }
+          return { currency, price: price };
+        }
+      }
+
+      class AmazonFront extends StoreFront {
+        constructor() {
+          super();
+          this.origin = "https://amazon.com";
+        }
+
+        parseHTML(data) {
+          const productContainer = '.s-result-item[data-component-type="s-search-result"]';
+          const nameSel = "a.a-link-normal.s-line-clamp-2 h2 span";
+          const linkSel = "a.a-link-normal.s-line-clamp-2";
+          const priceSel = ".a-price-whole";
+          const priceFraction = ".a-price-fraction";
+
+          const parser = new DOMParser();
+          const html = parser.parseFromString(data, "text/html");
+          const items = Array.from(html.querySelectorAll(productContainer)).map((el, u) => {
+            const txt = (el.querySelector(priceSel)?.textContent || "") + (el.querySelector(priceFraction)?.textContent || "0");
+            console.log("txt", txt);
+            const { currency, price } = this.getPriceData(txt);
+
+            // Get the name from the h2 span inside the link
+            const nameElement = el.querySelector(nameSel);
+            const name = nameElement ? nameElement.textContent?.trim() || "" : "";
+
+            // Get the link from the a element
+            const linkElement = el.querySelector(linkSel);
+            const href = linkElement ? linkElement.getAttribute("href") : null;
+
+            return {
+              image: "",
+              name,
+              currency,
+              price,
+              location: "",
+              originalPrice: { currency: "USD", price: 0 },
+              shippingCost: { currency: "USD", price: 0 },
+              seller: undefined,
+              status: "",
+              watchCount: 0,
+              soldCount: 0,
+              bidCount: 0,
+              link: this.fixLink(href),
+            };
+          });
+
+          return {
+            items: items,
+            total: 0,
+            totalPages: 0,
+            proxy: "",
+          };
+        }
+      }
+
+      // Test the parser
+      fetch("samples/amazonSampleHtml.html")
+        .then((response) => response.text())
+        .then((html) => {
+          const parser = new AmazonFront();
+          const results = parser.parseHTML(html);
+
+          const statusEl = document.getElementById("status");
+          const resultsEl = document.getElementById("results");
+
+          if (results.items.length > 0) {
+            statusEl.innerHTML = `<span class="success">✓ Success! Found ${results.items.length} products</span>`;
+            resultsEl.innerHTML = `
+                        <h2>Sample Results (first 3 products):</h2>
+                        <pre>${JSON.stringify(results.items.slice(0, 3), null, 2)}</pre>
+                        <h3>All Product Names:</h3>
+                        <ul>
+                            ${results.items.map((item, i) => `<li><strong>${i + 1}:</strong> ${item.name || "No name found"} - ${item.currency}${item.price} - <a href="${item.link}" target="_blank">Link</a></li>`).join("")}
+                        </ul>
+                    `;
+          } else {
+            statusEl.innerHTML = '<span class="error">✗ No products found</span>';
+            resultsEl.innerHTML = "<p>The parser did not find any products in the sample HTML.</p>";
+          }
+
+          console.log("Amazon parser results:", results);
+        })
+        .catch((error) => {
+          document.getElementById("status").innerHTML = `<span class="error">✗ Error: ${error}</span>`;
+          document.getElementById("results").innerHTML = `<p>Error loading or parsing: ${error}</p>`;
+          console.error("Test error:", error);
+        });
+    </script>
+  </body>
+</html>
