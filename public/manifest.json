@@ -25,18 +25,18 @@
   "web_accessible_resources": [
     {
       "resources": ["css/style.css"],
-      "matches": ["https://mercadolibre.com.uy/*", "https://listado.mercadolibre.com.uy/*", "https://mercadolibre.com.co/*", "https://listado.mercadolibre.com.co/*"]
+      "matches": ["https://mercadolibre.com.uy/*", "https://www.mercadolibre.com.uy/*", "https://listado.mercadolibre.com.uy/*", "https://mercadolibre.com.co/*", "https://www.mercadolibre.com.co/*", "https://listado.mercadolibre.com.co/*"]
     }
   ],
   "content_scripts": [
     {
       "css": ["css/style.css"],
-      "matches": ["https://mercadolibre.com.uy/*", "https://listado.mercadolibre.com.uy/*", "https://mercadolibre.com.co/*", "https://listado.mercadolibre.com.co/*"],
+      "matches": ["https://mercadolibre.com.uy/*", "https://www.mercadolibre.com.uy/*", "https://listado.mercadolibre.com.uy/*", "https://mercadolibre.com.co/*", "https://www.mercadolibre.com.co/*", "https://listado.mercadolibre.com.co/*"],
       "js": ["js/content_script.js"],
       "run_at": "document_end"
     }
   ],
   "options_page": "options.html",
   "permissions": ["storage", "tabs"],
-  "host_permissions": ["https://www.ebay.com/*", "https://www.amazon.com/*", "https://amazon.com/*", "https://ebay.com/*", "https://mercadolibre.com.uy/*", "https://listado.mercadolibre.com.uy/*", "https://mercadolibre.com.co/*", "https://listado.mercadolibre.com.co/*"]
+  "host_permissions": ["https://www.ebay.com/*", "https://www.amazon.com/*", "https://amazon.com/*", "https://ebay.com/*", "https://mercadolibre.com.uy/*", "https://www.mercadolibre.com.uy/*", "https://listado.mercadolibre.com.uy/*", "https://mercadolibre.com.co/*", "https://www.mercadolibre.com.co/*", "https://listado.mercadolibre.com.co/*"]
 }

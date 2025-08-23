@@ -2,18 +2,41 @@ import { amazonFront } from "./classes/AmazonFront";
 import { ebayFront } from "./classes/EbayFront";
 import { Item } from "./interfaces/products.interface";
 
+// IMMEDIATE CONSOLE LOGS FOR DEBUGGING
+console.log("%c🚨 MERCADOLIBRE EXTENSION - CONTENT SCRIPT LOADING! 🚨", "background: #ff0000; color: #ffffff; font-size: 16px; font-weight: bold; padding: 10px;");
+console.log("%c📍 CURRENT URL:", "color: #007bff; font-weight: bold;", window.location.href);
+console.log("%c⏰ TIMESTAMP:", "color: #28a745; font-weight: bold;", new Date().toISOString());
+console.log("%c🔧 USER AGENT:", "color: #6c757d;", navigator.userAgent);
+
+// Test if we're on the right domain
+const isOnMercadoLibre = window.location.href.includes("mercadolibre.com");
+console.log("%c🎯 ON MERCADOLIBRE:", isOnMercadoLibre ? "✅ YES" : "❌ NO", "color:", isOnMercadoLibre ? "#28a745" : "#dc3545", "font-weight: bold;");
+
 // Constants
 const SELECTORS = {
-  // Product item selectors
+  // Search page product item selectors
   PRODUCT_ITEMS: ".ui-search-layout .ui-search-result, .ui-search-layout .poly-card, .poly-card",
   PRODUCT_TITLE_OLD: ".ui-search-item__title",
   PRODUCT_TITLE_NEW: ".poly-component__title",
 
-  // Price selectors
+  // Search page price selectors
   PRICE_CURRENCY_OLD: ".ui-search-price__second-line .andes-money-amount__currency-symbol",
   PRICE_CURRENCY_NEW: ".poly-price__current .andes-money-amount__currency-symbol, .poly-component__price .andes-money-amount__currency-symbol",
   PRICE_FRACTION_OLD: ".ui-search-price__second-line .andes-money-amount__fraction",
   PRICE_FRACTION_NEW: ".poly-price__current .andes-money-amount__fraction, .poly-component__price .andes-money-amount__fraction",
+
+  // Product page main product selectors
+  PDP_MAIN_TITLE: ".ui-pdp-title",
+  PDP_MAIN_PRICE_CONTAINER: "#price",
+  PDP_MAIN_PRICE_CURRENCY: "#price .andes-money-amount__currency-symbol",
+  PDP_MAIN_PRICE_FRACTION: "#price .andes-money-amount__fraction",
+
+  // Product page recommendations selectors
+  PDP_RECOMMENDATIONS_CONTAINER: ".ui-recommendations-carousel-wrapper-ref, .andes-carousel-snapped__wrapper",
+  PDP_RECOMMENDATION_ITEMS: ".andes-carousel-snapped__slide .recos-polycard, .recos-polycard.poly-card",
+  PDP_RECOMMENDATION_TITLE: ".poly-component__title",
+  PDP_RECOMMENDATION_PRICE_CURRENCY: ".poly-component__price .andes-money-amount__currency-symbol",
+  PDP_RECOMMENDATION_PRICE_FRACTION: ".poly-component__price .andes-money-amount__fraction",
 
   // Button selectors
   BUTTON_CONTAINER: ".btn_ml_app_container",
@@ -303,6 +326,120 @@ function wordCoincidence(str1: string, str2: string): number {
 }
 
 /**
+ * Checks if current page is a product detail page
+ */
+function isProductDetailPage(): boolean {
+  // Check URL pattern (contains /p/ or /MLU)
+  const url = window.location.href;
+  const isProductURL = /\/(p|MLU)\/[\w-]+/.test(url);
+
+  // Check for presence of product page elements
+  const hasProductTitle = !!document.querySelector(SELECTORS.PDP_MAIN_TITLE);
+  const hasPriceContainer = !!document.querySelector(SELECTORS.PDP_MAIN_PRICE_CONTAINER);
+
+  return isProductURL && (hasProductTitle || hasPriceContainer);
+}
+
+/**
+ * Gets the product title from the main product on a product detail page
+ */
+function getMainProductTitle(): string | null {
+  const titleElement = document.querySelector(SELECTORS.PDP_MAIN_TITLE);
+  return titleElement?.textContent?.trim() || null;
+}
+
+/**
+ * Gets the product title from the current page URL (for product pages)
+ */
+function getProductTitleFromURL(): string | null {
+  const url = window.location.href;
+  const match = url.match(/\/([^\/\?#]+)(?:\/p\/|\-_JM)/);
+  if (match && match[1]) {
+    // Replace dashes with spaces and decode
+    return decodeURIComponent(match[1].replace(/-/g, " "));
+  }
+  return null;
+}
+
+/**
+ * Gets MercadoLibre price from main product on product detail page
+ */
+function getMainProductPrice(): MLPrice {
+  const defaultPrice: MLPrice = { currency: "UYU", price: 0 };
+
+  try {
+    const currencyElement = document.querySelector(SELECTORS.PDP_MAIN_PRICE_CURRENCY);
+    const priceElement = document.querySelector(SELECTORS.PDP_MAIN_PRICE_FRACTION);
+
+    if (currencyElement && priceElement) {
+      const currencyText = currencyElement.innerHTML.trim();
+      const priceText = priceElement.innerHTML.replace(/\./g, "").replace(/,/g, "");
+      const price = parseFloat(priceText);
+
+      // Determine currency based on symbol
+      let currency = "UYU";
+      if (currencyText.includes("US$") || currencyText.includes("U$S")) {
+        currency = "USD";
+      } else if (currencyText === "$") {
+        currency = "UYU";
+      }
+
+      return {
+        currency: currency,
+        price: price,
+      };
+    }
+  } catch (e) {
+    console.warn("Error getting main product price:", e);
+  }
+
+  return defaultPrice;
+}
+
+/**
+ * Gets the product title from a recommendation item
+ */
+function getRecommendationProductTitle(item: Element): string | null {
+  const titleElement = item.querySelector(SELECTORS.PDP_RECOMMENDATION_TITLE);
+  return titleElement?.textContent?.trim() || null;
+}
+
+/**
+ * Gets MercadoLibre price from a recommendation item
+ */
+function getRecommendationProductPrice(item: Element): MLPrice {
+  const defaultPrice: MLPrice = { currency: "UYU", price: 0 };
+
+  try {
+    const currencyElement = item.querySelector(SELECTORS.PDP_RECOMMENDATION_PRICE_CURRENCY);
+    const priceElement = item.querySelector(SELECTORS.PDP_RECOMMENDATION_PRICE_FRACTION);
+
+    if (currencyElement && priceElement) {
+      const currencyText = currencyElement.innerHTML.trim();
+      const priceText = priceElement.innerHTML.replace(/\./g, "").replace(/,/g, "");
+      const price = parseFloat(priceText);
+
+      // Determine currency based on symbol
+      let currency = "UYU";
+      if (currencyText.includes("US$") || currencyText.includes("U$S")) {
+        currency = "USD";
+      } else if (currencyText === "$") {
+        currency = "UYU";
+      }
+
+      return {
+        currency: currency,
+        price: price,
+      };
+    }
+  } catch (e) {
+    console.warn("Error getting recommendation product price:", e);
+  }
+
+  return defaultPrice;
+}
+
+/**
  * Finds the most similar product from a list
  * Disabled as its not working as expected.
  */
@@ -488,9 +625,15 @@ function sendMessagePromise(message: any): Promise<any> {
 }
 
 /**
- * Button click handler
+ * Generic button click handler that works for search results, main product, and recommendations
  */
-function createButtonClickHandler(platform: "ebay" | "amazon", productName: string, item: Element, button: HTMLButtonElement) {
+function createButtonClickHandler(
+  platform: "ebay" | "amazon", 
+  productName: string, 
+  item: Element, 
+  button: HTMLButtonElement, 
+  itemType: "search" | "main" | "recommendation" = "search"
+) {
   return async (event: Event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -500,8 +643,20 @@ function createButtonClickHandler(platform: "ebay" | "amazon", productName: stri
     button.disabled = true;
 
     try {
-      // Get MercadoLibre price for filtering
-      const mlPrice = getMercadoLibrePrice(item);
+      // Get MercadoLibre price for filtering based on item type
+      let mlPrice: MLPrice;
+      switch (itemType) {
+        case "main":
+          mlPrice = getMainProductPrice();
+          break;
+        case "recommendation":
+          mlPrice = getRecommendationProductPrice(item);
+          break;
+        default:
+          mlPrice = getMercadoLibrePrice(item);
+          break;
+      }
+
       let maxPriceUSD: number | undefined;
 
       // Convert ML price to USD for eBay filtering
@@ -516,7 +671,8 @@ function createButtonClickHandler(platform: "ebay" | "amazon", productName: stri
       }
 
       const searchURL = createSearchURL(platform, productName, platform === "ebay" ? maxPriceUSD : undefined);
-      console.log("Search url amazon", searchURL);
+      console.log(`${itemType} ${platform} search URL:`, searchURL);
+      
       const response = await sendMessagePromise({
         url: searchURL,
         msg: "request",
@@ -551,7 +707,9 @@ function createButtonClickHandler(platform: "ebay" | "amazon", productName: stri
         const className = isBetterPrice ? "btn_ml_success" : "btn_ml_danger";
         const icon = isBetterPrice ? "💰 " : "⚠️ ";
 
-        button.className = `btn_ml_app ${className}`;
+        // Add the appropriate CSS classes based on item type
+        const baseClasses = itemType === "main" ? "btn_ml_app btn_ml_app_main" : "btn_ml_app";
+        button.className = `${baseClasses} ${className}`;
         button.innerHTML = `<div style="color: inherit !important; text-decoration: none !important;">
           ${icon}$${bestMatch.price}
         </div>`;
@@ -564,7 +722,7 @@ function createButtonClickHandler(platform: "ebay" | "amazon", productName: stri
         window.open(link, "_blank");
       };
     } catch (error) {
-      console.error(`Error processing ${platform} request:`, error);
+      console.error(`Error processing ${itemType} ${platform} request:`, error);
       button.textContent = "Error";
     } finally {
       button.disabled = false;
@@ -616,6 +774,84 @@ function setupButtonHandlers(container: HTMLElement, productName: string, item: 
 }
 
 /**
+ * Creates a main product button container with better styling for product pages
+ */
+function createMainProductButtonContainer(): HTMLElement {
+  const sizeMap = {
+    small: "12px",
+    medium: "14px",
+    large: "16px",
+  };
+
+  const fontSize = sizeMap[extensionConfig.textSize as keyof typeof sizeMap] || "14px";
+  const transition = extensionConfig.animations ? "all 0.3s ease" : "none";
+
+  const element = document.createElement("div");
+  element.innerHTML = `
+    <div class="btn_ml_app_container btn_ml_app_main_product" style="
+      font-size: ${fontSize}; 
+      transition: ${transition}; 
+      margin: 16px 0; 
+      padding: 12px; 
+      border: 1px solid #e6e6e6; 
+      border-radius: 8px; 
+      background: #f8f9fa;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    ">
+      <div style="margin-bottom: 8px; font-weight: 600; color: #333; font-size: ${fontSize};">
+        Comparar precios en:
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button style="
+          font-size: ${fontSize}; 
+          flex: 1; 
+          padding: 8px 12px; 
+          border-radius: 6px;
+          border: 1px solid #ddd;
+          background: white;
+          cursor: pointer;
+          transition: ${transition};
+        " class="ebay_btn btn_ml_app btn_ml_app_main">
+          <span>🛒 eBay</span>
+        </button>
+        <button style="
+          font-size: ${fontSize}; 
+          flex: 1; 
+          padding: 8px 12px; 
+          border-radius: 6px;
+          border: 1px solid #ddd;
+          background: white;
+          cursor: pointer;
+          transition: ${transition};
+        " class="amazon_btn btn_ml_app btn_ml_app_main">
+          <span>📦 Amazon</span>
+        </button>
+      </div>
+    </div>
+  `;
+  return element;
+}
+
+/**
+ * Setup main product button handlers
+ */
+function setupMainProductButtonHandlers(container: HTMLElement, productName: string): void {
+  const ebayBtn = container.querySelector(SELECTORS.EBAY_BUTTON) as HTMLButtonElement;
+  const amazonBtn = container.querySelector(SELECTORS.AMAZON_BUTTON) as HTMLButtonElement;
+
+  // Create a dummy element for the main product context since we don't have a specific item element
+  const dummyElement = document.createElement('div');
+
+  if (ebayBtn) {
+    ebayBtn.onclick = createButtonClickHandler("ebay", productName, dummyElement, ebayBtn, "main");
+  }
+
+  if (amazonBtn) {
+    amazonBtn.onclick = createButtonClickHandler("amazon", productName, dummyElement, amazonBtn, "main");
+  }
+}
+
+/**
  * Process a single product item
  */
 function processProductItem(item: Element, index: number): void {
@@ -647,6 +883,207 @@ function processProductItem(item: Element, index: number): void {
 }
 
 /**
+ * Process the main product on a product detail page
+ */
+function processMainProduct(): void {
+  // Check if extension is enabled
+  if (!extensionConfig.enabled) {
+    return;
+  }
+
+  // Check if we already processed the main product - look for any extension button container in the price area
+  const priceContainer = document.querySelector(SELECTORS.PDP_MAIN_PRICE_CONTAINER);
+  if (!priceContainer) {
+    return;
+  }
+
+  // Check multiple ways to see if buttons already exist
+  const existingContainer = document.querySelector(".btn_ml_app_main_product");
+  const existingInPrice = priceContainer.querySelector(".btn_ml_app_container");
+  const existingInParent = priceContainer.parentElement?.querySelector(".btn_ml_app_container");
+
+  if (existingContainer || existingInPrice || existingInParent) {
+    console.log("🔄 Main product buttons already exist, skipping");
+    return;
+  }
+
+  // Get product name from title or URL
+  let productName = getMainProductTitle();
+  if (!productName) {
+    productName = getProductTitleFromURL();
+  }
+
+  if (!productName) {
+    console.warn("Could not extract product name for main product");
+    return;
+  }
+
+  console.log("Processing main product:", productName);
+
+  const buttonContainer = createMainProductButtonContainer();
+
+  // Insert the button container after the price section
+  priceContainer.parentNode?.insertBefore(buttonContainer, priceContainer.nextSibling);
+
+  setupMainProductButtonHandlers(buttonContainer, productName);
+}
+
+/**
+ * Process a single recommendation item
+ */
+function processRecommendationItem(item: Element, index: number): void {
+  // Check if extension is enabled
+  if (!extensionConfig.enabled) {
+    processingQueue.delete(item);
+    return;
+  }
+
+  if (processingQueue.has(item)) return;
+  processingQueue.add(item);
+
+  if (item.querySelector(SELECTORS.BUTTON_CONTAINER)) {
+    processingQueue.delete(item);
+    return;
+  }
+
+  const productName = getRecommendationProductTitle(item);
+  if (!productName) {
+    console.log("❌ No product name found for recommendation item:", item);
+    processingQueue.delete(item);
+    return;
+  }
+
+  console.log("🔍 Processing recommendation item:", productName, item);
+
+  // Use the smaller button container for recommendations to avoid disrupting layout
+  const buttonContainer = createButtonContainer();
+
+  // Try multiple insertion strategies for different layouts
+  let inserted = false;
+
+  // Strategy 1: Insert after price section
+  const priceSection = item.querySelector(".poly-card");
+  if (priceSection && priceSection.parentNode) {
+    (item as HTMLElement).style.position = "relative";
+    priceSection.parentNode.insertBefore(buttonContainer, priceSection.nextSibling);
+    inserted = true;
+  }
+
+  // Strategy 3: Fallback - add at the end of the item
+  if (!inserted) {
+    (item as HTMLElement).style.position = "relative";
+    (item as HTMLElement).appendChild(buttonContainer);
+  }
+
+  // Use getRecommendationProductPrice for recommendations
+  setupRecommendationButtonHandlers(buttonContainer, productName, item);
+  processingQueue.delete(item);
+}
+
+/**
+ * Setup recommendation button handlers (adapted for recommendation context)
+ */
+function setupRecommendationButtonHandlers(container: HTMLElement, productName: string, item: Element): void {
+  const ebayBtn = container.querySelector(SELECTORS.EBAY_BUTTON) as HTMLButtonElement;
+  const amazonBtn = container.querySelector(SELECTORS.AMAZON_BUTTON) as HTMLButtonElement;
+
+  if (ebayBtn) {
+    ebayBtn.onclick = createButtonClickHandler("ebay", productName, item, ebayBtn, "recommendation");
+  }
+
+  if (amazonBtn) {
+    amazonBtn.onclick = createButtonClickHandler("amazon", productName, item, amazonBtn, "recommendation");
+  }
+}
+
+/**
+ * Process recommendation items (extracted from processAllItems)
+ */
+function processRecommendationItems(): void {
+  const recommendationItems = document.querySelectorAll(SELECTORS.PDP_RECOMMENDATION_ITEMS);
+  console.log(`🔍 Found ${recommendationItems.length} recommendation items using selector: "${SELECTORS.PDP_RECOMMENDATION_ITEMS}"`);
+
+  // Debug: log the carousel containers found
+  const containers = document.querySelectorAll(SELECTORS.PDP_RECOMMENDATIONS_CONTAINER);
+  console.log(`📦 Found ${containers.length} carousel containers using selector: "${SELECTORS.PDP_RECOMMENDATIONS_CONTAINER}"`);
+
+  // Debug: log some sample elements
+  if (recommendationItems.length === 0) {
+    console.log("⚠️ No recommendation items found. Let's debug:");
+
+    // Check what carousel slides exist
+    const slides = document.querySelectorAll(".andes-carousel-snapped__slide");
+    console.log(`- Found ${slides.length} carousel slides`);
+
+    // Check what recos-polycard exist
+    const polycards = document.querySelectorAll(".recos-polycard");
+    console.log(`- Found ${polycards.length} recos-polycard elements`);
+
+    // Check what poly-card exist
+    const polyCards = document.querySelectorAll(".poly-card");
+    console.log(`- Found ${polyCards.length} poly-card elements`);
+
+    // More specific check
+    const slidePolycards = document.querySelectorAll(".andes-carousel-snapped__slide .recos-polycard");
+    console.log(`- Found ${slidePolycards.length} slide recos-polycard elements`);
+  }
+
+  recommendationItems.forEach((item, index) => {
+    console.log(`📋 Processing recommendation item ${index + 1}:`, item);
+    processRecommendationItem(item, index);
+  });
+}
+
+/**
+ * Set up MutationObserver for carousel changes
+ */
+function setupCarouselObserver(): void {
+  const carouselContainer = document.querySelector(SELECTORS.PDP_RECOMMENDATIONS_CONTAINER);
+  console.log(`🎠 Setting up carousel observer. Container found:`, !!carouselContainer);
+
+  if (!carouselContainer) {
+    console.log("⚠️ No carousel container found for MutationObserver using selector:", SELECTORS.PDP_RECOMMENDATIONS_CONTAINER);
+    // Try alternative selectors
+    const altContainer = document.querySelector('.andes-carousel-snapped__wrapper, .ui-recommendations-carousel-wrapper-ref, section[aria-label*="relacionados"]');
+    if (altContainer) {
+      console.log("✅ Found alternative carousel container:", altContainer);
+    }
+    return;
+  }
+
+  const observer = new MutationObserver((mutations) => {
+    let shouldProcessRecommendations = false;
+
+    mutations.forEach((mutation) => {
+      if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
+        // Check if new slides were added
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            const element = node as Element;
+            if (element.querySelector && (element.querySelector(".andes-carousel-snapped__slide") || element.classList.contains("andes-carousel-snapped__slide"))) {
+              console.log("🆕 New carousel slide detected:", element);
+              shouldProcessRecommendations = true;
+            }
+          }
+        });
+      }
+    });
+
+    if (shouldProcessRecommendations) {
+      console.log("🔄 New carousel items detected, processing recommendations...");
+      setTimeout(() => processRecommendationItems(), 100); // Small delay to ensure DOM is ready
+    }
+  });
+
+  observer.observe(carouselContainer, {
+    childList: true,
+    subtree: true,
+  });
+
+  console.log("👁️ Carousel MutationObserver set up successfully");
+}
+
+/**
  * Process all product items
  */
 function processAllItems(): void {
@@ -661,12 +1098,29 @@ function processAllItems(): void {
     return;
   }
 
-  const items = document.querySelectorAll(SELECTORS.PRODUCT_ITEMS);
-  if (items.length === 0) return;
+  // Check if we're on a product detail page
+  if (isProductDetailPage()) {
+    console.log("📄 Processing product detail page...");
 
-  items.forEach((item, index) => {
-    processProductItem(item, index);
-  });
+    // Process the main product
+    processMainProduct();
+
+    // Process recommendation items (initial load)
+    processRecommendationItems();
+
+    // Set up observer for dynamically loaded carousel items
+    setupCarouselObserver();
+  } else {
+    console.log("🔍 Processing search results page...");
+
+    // Process search result items
+    const items = document.querySelectorAll(SELECTORS.PRODUCT_ITEMS);
+    if (items.length === 0) return;
+
+    items.forEach((item, index) => {
+      processProductItem(item, index);
+    });
+  }
 }
 
 /**
@@ -679,16 +1133,30 @@ function setupIntervalMonitoring(): void {
 
   checkInterval = window.setInterval(() => {
     if (window.location.href.includes("mercadolibre.com")) {
-      processAllItems();
+      // Only process search results, not PDP items in interval
+      if (!isProductDetailPage()) {
+        processAllItems();
+      } else {
+        // For PDP, only check for new recommendation items that might load dynamically
+        const allRecommendations = document.querySelectorAll(SELECTORS.PDP_RECOMMENDATION_ITEMS);
+        const unprocessedRecommendations = Array.from(allRecommendations).filter((item) => !item.querySelector(SELECTORS.BUTTON_CONTAINER));
+
+        if (unprocessedRecommendations.length > 0) {
+          console.log(`🔄 Found ${unprocessedRecommendations.length} unprocessed recommendations in interval check`);
+          unprocessedRecommendations.forEach((item, index) => {
+            processRecommendationItem(item, index);
+          });
+        }
+      }
     } else {
       if (checkInterval) {
         clearInterval(checkInterval);
         checkInterval = null;
       }
     }
-  }, 2000);
+  }, 3000); // Increased to 3 seconds to reduce frequency
 
-  console.log("⏰ Interval monitoring started - checking every 2 seconds");
+  console.log("⏰ Interval monitoring started - checking every 3 seconds");
 }
 
 /**
@@ -717,12 +1185,16 @@ async function initializeCurrencyData(): Promise<{ currencyList: any; currencies
  */
 async function initializeExtension(): Promise<void> {
   if (isInitialized || !window.location.href.includes("mercadolibre.com")) {
+    console.log("⚠️ Extension already initialized or not on MercadoLibre, skipping");
     return;
   }
 
   console.log("🚀 Initializing MercadoLibre Extension...");
 
   try {
+    // Mark as initialized early to prevent duplicate initialization
+    isInitialized = true;
+
     // Load configuration first
     loadConfiguration();
 
@@ -732,11 +1204,11 @@ async function initializeExtension(): Promise<void> {
     setTimeout(() => {
       processAllItems();
       setupIntervalMonitoring();
-      isInitialized = true;
       console.log("✅ Extension initialization complete");
     }, 1000);
   } catch (error) {
     console.error("❌ Extension initialization failed:", error);
+    isInitialized = false; // Reset on error
   }
 }
 
@@ -767,6 +1239,9 @@ new MutationObserver(() => {
     lastUrl = url;
     console.log("🔄 URL changed to:", url);
 
+    // Clean up existing buttons when navigating
+    cleanupAllExtensionElements();
+
     if (url.includes("mercadolibre.com")) {
       console.log("🛒 Navigated within MercadoLibre, processing items...");
       isInitialized = false;
@@ -782,6 +1257,23 @@ new MutationObserver(() => {
     }
   }
 }).observe(document, { subtree: true, childList: true });
+
+// Helper function to clean up all extension elements
+function cleanupAllExtensionElements(): void {
+  try {
+    // Remove all button containers
+    document.querySelectorAll(".btn_ml_app_container").forEach((container) => {
+      container.remove();
+    });
+
+    // Reset processing queue
+    processingQueue.clear();
+
+    console.log("🧹 Cleaned up all extension elements for navigation");
+  } catch (error) {
+    console.error("❌ Error cleaning up extension elements:", error);
+  }
+}
 
 // Cleanup
 window.addEventListener("beforeunload", () => {

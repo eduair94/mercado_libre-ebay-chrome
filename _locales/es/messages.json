@@ -91,6 +91,10 @@
     "message": "Extensión desarrollada por Eduardo Airaudo para comparar precios de productos entre MercadoLibre y eBay de manera eficiente.",
     "description": "Descripción del desarrollador"
   },
+  "supportDescription": {
+    "message": "¿Problemas o sugerencias? Contáctame a través de mi perfil de LinkedIn para obtener soporte.",
+    "description": "Descripción del soporte al usuario"
+  },
   "versionLabel": {
     "message": "Versión",
     "description": "Etiqueta de versión"

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test URL Matching - MercadoLibre Extension</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #f5f5f5;
+      }
+      .test-container {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+      .url-test {
+        background: #f8f9fa;
+        padding: 10px;
+        border-left: 4px solid #007bff;
+        margin: 10px 0;
+      }
+      .success {
+        border-left-color: #28a745;
+        background: #d4edda;
+      }
+      .error {
+        border-left-color: #dc3545;
+        background: #f8d7da;
+      }
+      pre {
+        background: #343a40;
+        color: #ffffff;
+        padding: 10px;
+        border-radius: 4px;
+        overflow-x: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="test-container">
+      <h1>🔧 MercadoLibre Extension - URL Matching Test</h1>
+      <p>This page helps test whether the content script should load on different MercadoLibre URLs.</p>
+
+      <h2>Current Page URL:</h2>
+      <div id="currentUrl" class="url-test"></div>
+
+      <h2>URL Match Test Results:</h2>
+      <div id="matchResults"></div>
+
+      <h2>Content Script Status:</h2>
+      <div id="scriptStatus" class="url-test"></div>
+
+      <h2>Console Output:</h2>
+      <pre id="consoleOutput">Check browser console for actual output...</pre>
+    </div>
+
+    <script>
+      // Display current URL
+      document.getElementById("currentUrl").innerHTML = `<strong>Current URL:</strong> ${window.location.href}`;
+
+      // Test URL patterns from manifest
+      const patterns = ["https://mercadolibre.com.uy/*", "https://www.mercadolibre.com.uy/*", "https://listado.mercadolibre.com.uy/*", "https://mercadolibre.com.co/*", "https://www.mercadolibre.com.co/*", "https://listado.mercadolibre.com.co/*"];
+
+      const testUrl = "https://www.mercadolibre.com.uy/cable-5-metros-vga-a-vga-macho-macho-laptop-pc-proyector/p/MLU21686604";
+
+      // Convert pattern to regex for testing
+      function patternToRegex(pattern) {
+        return new RegExp("^" + pattern.replace(/\*/g, ".*").replace(/\./g, "\\.") + "$");
+      }
+
+      const matchResults = document.getElementById("matchResults");
+      patterns.forEach((pattern) => {
+        const regex = patternToRegex(pattern);
+        const matches = regex.test(testUrl);
+        const div = document.createElement("div");
+        div.className = `url-test ${matches ? "success" : "error"}`;
+        div.innerHTML = `
+                <strong>Pattern:</strong> ${pattern}<br>
+                <strong>Test URL:</strong> ${testUrl}<br>
+                <strong>Matches:</strong> ${matches ? "✅ YES" : "❌ NO"}
+            `;
+        matchResults.appendChild(div);
+      });
+
+      // Check if content script loaded
+      setTimeout(() => {
+        const scriptStatus = document.getElementById("scriptStatus");
+        const hasExtensionElements = document.querySelectorAll(".btn_ml_app_container").length > 0;
+        const hasConsoleMessages = true; // We'll check this manually
+
+        scriptStatus.innerHTML = `
+                <strong>Extension Elements Found:</strong> ${hasExtensionElements ? "✅ YES" : "❌ NO"}<br>
+                <strong>Check Console:</strong> Open browser dev tools and look for MercadoLibre Extension logs
+            `;
+        scriptStatus.className = `url-test ${hasExtensionElements ? "success" : "error"}`;
+      }, 2000);
+
+      console.log("🧪 Test Page Loaded - Check if MercadoLibre Extension content script loads!");
+      console.log("📊 URL Pattern Tests:");
+      patterns.forEach((pattern) => {
+        const regex = patternToRegex(pattern);
+        const matches = regex.test(testUrl);
+        console.log(`${matches ? "✅" : "❌"} ${pattern} -> ${testUrl}`);
+      });
+    </script>
+  </body>
+</html>
