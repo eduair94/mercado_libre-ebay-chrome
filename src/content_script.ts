@@ -50,8 +50,221 @@ let isInitialized = false;
 let checkInterval: number | null = null;
 let processingQueue = new Set<Element>();
 
+// Configuration state
+let extensionConfig = {
+  enabled: true,
+  textSize: "medium",
+  animations: true,
+  notifications: true,
+  language: "es",
+};
+
 console.log("🚀 MercadoLibre Extension - Content Script Loaded!");
 console.log("🌐 Current URL:", window.location.href);
+
+// Load initial configuration
+function loadConfiguration() {
+  try {
+    chrome.storage.sync.get("extensionConfig", (result) => {
+      if (result.extensionConfig) {
+        extensionConfig = { ...extensionConfig, ...result.extensionConfig };
+        console.log("⚙️ Configuration loaded:", extensionConfig);
+
+        // Apply configuration changes immediately
+        applyConfigurationChanges();
+      }
+    });
+  } catch (error) {
+    console.error("❌ Error loading configuration:", error);
+  }
+}
+
+// Apply configuration changes to existing elements
+function applyConfigurationChanges() {
+  if (!extensionConfig.enabled) {
+    // Hide all extension buttons if disabled
+    document.querySelectorAll(".btn_ml_app_container").forEach((container) => {
+      (container as HTMLElement).style.display = "none";
+    });
+    return;
+  } else {
+    // Show all extension buttons if enabled and force re-initialization
+    const containers = document.querySelectorAll(".btn_ml_app_container");
+
+    // If no containers exist or extension was previously disabled, force re-initialization
+    if (containers.length === 0 || !isInitialized) {
+      console.log("🔄 Extension enabled - forcing HTML re-rendering and re-initialization");
+
+      // Reset initialization flag
+      isInitialized = false;
+
+      // Force re-initialization to render HTML elements
+      setTimeout(() => {
+        initializeExtension();
+      }, 100);
+
+      return; // Exit early since re-initialization will handle everything
+    }
+  }
+
+  // Apply text size changes
+  const sizeMap = {
+    small: "12px",
+    medium: "14px",
+    large: "16px",
+  };
+
+  document.querySelectorAll(".btn_ml_app_container, .btn_ml_app").forEach((container) => {
+    (container as HTMLElement).style.fontSize = sizeMap[extensionConfig.textSize as keyof typeof sizeMap] || "14px";
+  });
+
+  // Apply animation settings
+  if (!extensionConfig.animations) {
+    document.querySelectorAll(".btn_ml_app_container").forEach((container) => {
+      (container as HTMLElement).style.transition = "none";
+    });
+  } else {
+    document.querySelectorAll(".btn_ml_app_container").forEach((container) => {
+      (container as HTMLElement).style.transition = "all 0.3s ease";
+    });
+  }
+}
+
+// Cleanup all extension elements and listeners
+function cleanupExtension() {
+  try {
+    console.log("🧹 Starting extension cleanup...");
+
+    // Remove all extension-generated HTML elements
+    document.querySelectorAll(".btn_ml_app_container").forEach((container) => {
+      console.log("Removing button container:", container);
+      container.remove();
+    });
+
+    // Remove any price comparison results
+    document.querySelectorAll('[class*="ml-price-comparison"], [class*="ebay-result"], [class*="amazon-result"]').forEach((element) => {
+      console.log("Removing comparison element:", element);
+      element.remove();
+    });
+
+    // Remove notifications
+    document.querySelectorAll(".ml-extension-notification").forEach((notification) => {
+      notification.remove();
+    });
+
+    // Clear any intervals
+    if (checkInterval) {
+      clearInterval(checkInterval);
+      checkInterval = null;
+      console.log("✅ Cleared monitoring interval");
+    }
+
+    // Reset processing queue
+    processingQueue.clear();
+
+    // Mark as not initialized to prevent further processing
+    isInitialized = false;
+
+    // Reset extension state
+    currencyData = null;
+    currenciesData = null;
+
+    console.log("✅ Extension cleanup completed successfully");
+
+    // Show completion notification
+    setTimeout(() => {
+      showNotification("Extensión completamente deshabilitada", "info");
+    }, 500);
+  } catch (error) {
+    console.error("❌ Error during extension cleanup:", error);
+  }
+}
+
+// Listen for configuration updates from popup
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === "CONFIG_UPDATED") {
+    console.log("🔄 Configuration updated:", message.config);
+    extensionConfig = { ...extensionConfig, ...message.config };
+
+    // Check if extension should be cleaned up
+    if (message.shouldCleanup) {
+      console.log("🧹 Extension disabled - cleaning up...");
+      cleanupExtension();
+      showNotification("Extensión deshabilitada - limpieza completa", "info");
+    } else {
+      applyConfigurationChanges();
+
+      // Show notification if enabled
+      if (extensionConfig.notifications) {
+        showNotification("Configuración actualizada", "success");
+      }
+    }
+
+    sendResponse({ success: true });
+  } else if (message.type === "FORCE_CLEANUP") {
+    console.log("🧹 Force cleanup requested from popup");
+    cleanupExtension();
+    sendResponse({ success: true });
+  } else if (message.type === "FORCE_REINITIALIZE") {
+    console.log("🔄 Force re-initialization requested from popup");
+
+    // Only reinitialize if on MercadoLibre and extension is enabled
+    if (window.location.href.includes("mercadolibre.com") && extensionConfig.enabled) {
+      isInitialized = false;
+      initializeExtension();
+      showNotification("Extensión reinicializada - HTML renderizado", "success");
+    }
+
+    sendResponse({ success: true });
+  }
+  return true;
+});
+
+// Show in-page notification
+function showNotification(message: string, type: "success" | "error" | "info" = "info") {
+  if (!extensionConfig.notifications) return;
+
+  // Remove existing notification
+  const existing = document.querySelector(".ml-extension-notification");
+  if (existing) {
+    existing.remove();
+  }
+
+  const notification = document.createElement("div");
+  notification.className = "ml-extension-notification";
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: ${type === "success" ? "#10b981" : type === "error" ? "#ef4444" : "#3b82f6"};
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 10000;
+    font-size: 14px;
+    font-weight: 500;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    max-width: 300px;
+  `;
+  notification.textContent = message;
+
+  document.body.appendChild(notification);
+
+  // Animate in
+  setTimeout(() => {
+    notification.style.transform = "translateX(0)";
+  }, 100);
+
+  // Remove after 3 seconds
+  setTimeout(() => {
+    notification.style.transform = "translateX(100%)";
+    setTimeout(() => {
+      notification.remove();
+    }, 300);
+  }, 3000);
+}
 
 /**
  * Calculates similarity score between two product names
@@ -111,7 +324,7 @@ function findMostSimilarProduct(target: string, products: Item[]): Item | null {
   // }
 
   // return bestMatch || products[0];
-  return products[0];
+  return products.find((el) => el.price) || products[0];
 }
 
 /**
@@ -322,25 +535,27 @@ function createButtonClickHandler(platform: "ebay" | "amazon", productName: stri
         return;
       }
 
-      const bestMatch = findMostSimilarProduct(productName, parsedResult.items);
+      let bestMatch = findMostSimilarProduct(productName, parsedResult.items);
       if (!bestMatch || bestMatch.price <= 0) {
         button.textContent = "No Price";
-        return;
+        bestMatch = {
+          link: searchURL,
+        } as Item;
+      } else {
+        const country = window.location.hostname.split(".").pop()?.toLowerCase() || "uy";
+        const currencySymbol = CURRENCY_MAPPING[country as keyof typeof CURRENCY_MAPPING] || "UYU";
+        const { priceRaw } = currencyConversion(bestMatch, currencySymbol);
+
+        const isBetterPrice = mlPrice.currency === "USD" ? bestMatch.price < mlPrice.price : priceRaw < mlPrice.price;
+
+        const className = isBetterPrice ? "btn_ml_success" : "btn_ml_danger";
+        const icon = isBetterPrice ? "💰 " : "⚠️ ";
+
+        button.className = `btn_ml_app ${className}`;
+        button.innerHTML = `<div style="color: inherit !important; text-decoration: none !important;">
+          ${icon}$${bestMatch.price}
+        </div>`;
       }
-
-      const country = window.location.hostname.split(".").pop()?.toLowerCase() || "uy";
-      const currencySymbol = CURRENCY_MAPPING[country as keyof typeof CURRENCY_MAPPING] || "UYU";
-      const { priceRaw } = currencyConversion(bestMatch, currencySymbol);
-
-      const isBetterPrice = mlPrice.currency === "USD" ? bestMatch.price < mlPrice.price : priceRaw < mlPrice.price;
-
-      const className = isBetterPrice ? "btn_ml_success" : "btn_ml_danger";
-      const icon = isBetterPrice ? "💰 " : "⚠️ ";
-
-      button.className = `${platform}_content ${className}`;
-      button.innerHTML = `<div style="color: inherit !important; text-decoration: none !important;">
-        ${icon}$${bestMatch.price}
-      </div>`;
 
       button.onclick = (e) => {
         e.preventDefault();
@@ -361,13 +576,22 @@ function createButtonClickHandler(platform: "ebay" | "amazon", productName: stri
  * Creates button container
  */
 function createButtonContainer(): HTMLElement {
+  const sizeMap = {
+    small: "12px",
+    medium: "14px",
+    large: "16px",
+  };
+
+  const fontSize = sizeMap[extensionConfig.textSize as keyof typeof sizeMap] || "14px";
+  const transition = extensionConfig.animations ? "all 0.3s ease" : "none";
+
   const element = document.createElement("div");
   element.innerHTML = `
-    <div class="btn_ml_app_container">
-      <button class="ebay_btn btn_ml_app">
+    <div class="btn_ml_app_container" style="font-size: ${fontSize}; transition: ${transition};">
+      <button style="font-size: ${fontSize}" class="ebay_btn btn_ml_app">
         <span>🛒 eBay</span>
       </button>
-      <button class="amazon_btn btn_ml_app">
+      <button style="font-size: ${fontSize}" class="amazon_btn btn_ml_app">
         <span>📦 Amazon</span>
       </button>
     </div>
@@ -395,6 +619,12 @@ function setupButtonHandlers(container: HTMLElement, productName: string, item: 
  * Process a single product item
  */
 function processProductItem(item: Element, index: number): void {
+  // Check if extension is enabled
+  if (!extensionConfig.enabled) {
+    processingQueue.delete(item);
+    return;
+  }
+
   if (processingQueue.has(item)) return;
   processingQueue.add(item);
 
@@ -420,6 +650,12 @@ function processProductItem(item: Element, index: number): void {
  * Process all product items
  */
 function processAllItems(): void {
+  // Don't process if extension is disabled
+  if (!extensionConfig.enabled) {
+    console.log("⚠️ Extension is disabled, skipping item processing");
+    return;
+  }
+
   if (!currenciesData || !currencyData) {
     console.log("⚠️ Currency data not loaded yet, waiting...");
     return;
@@ -487,6 +723,9 @@ async function initializeExtension(): Promise<void> {
   console.log("🚀 Initializing MercadoLibre Extension...");
 
   try {
+    // Load configuration first
+    loadConfiguration();
+
     await initializeCurrencyData();
     console.log("💱 Currency data loaded successfully");
 

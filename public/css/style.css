@@ -2,7 +2,6 @@
   z-index: 10;
   position: relative;
   border-radius: 6px;
-  font-size: 9px;
   font-weight: 600;
   padding: 4px 8px;
   margin: 0;
@@ -75,7 +74,6 @@
 .amazon_content {
   z-index: 10;
   position: relative;
-  font-size: 16px;
   font-weight: 600;
   padding: 3px 4px;
   margin: 0;
@@ -100,7 +98,6 @@
 
 .ebay_content small,
 .amazon_content small {
-  font-size: 6px !important;
   line-height: 1;
   display: block;
   max-height: 12px;
@@ -201,7 +198,6 @@
   position: absolute;
   left: -20px;
   top: 50%;
-  font-size: 14px;
 }
 
 .price-worse {
@@ -213,7 +209,6 @@
   position: absolute;
   left: -20px;
   top: 50%;
-  font-size: 14px;
 }
 
 /* Loading state animation */
@@ -245,7 +240,6 @@
 /* Responsive design */
 @media (max-width: 768px) {
   .btn_ml_app {
-    font-size: 8px;
     padding: 3px 6px;
     min-height: 20px;
     min-width: 65px;
@@ -259,7 +253,6 @@
 
   .ebay_content,
   .amazon_content {
-    font-size: 16px;
     padding: 3px 4px;
     min-height: 20px;
     min-width: 65px;

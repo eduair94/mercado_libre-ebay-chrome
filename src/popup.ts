@@ -13,6 +13,12 @@ interface ChromeMessages {
   };
 }
 
+interface Translations {
+  [language: string]: {
+    [key: string]: string;
+  };
+}
+
 class PopupController {
   private settings: ExtensionSettings = {
     enabled: true,
@@ -23,6 +29,60 @@ class PopupController {
   };
 
   private messages: ChromeMessages = {};
+
+  // Embedded translations to avoid async loading issues
+  private translations: Translations = {
+    es: {
+      enabled: "Habilitada",
+      disabled: "Deshabilitada",
+      popupTitle: "Configuración del Comparador",
+      enabledLabel: "Estado de la Extensión",
+      enabledDescription: "Habilitar o deshabilitar la extensión",
+      textSizeLabel: "Tamaño del Texto",
+      textSizeDescription: "Ajusta el tamaño del texto de la comparación",
+      textSizeSmall: "Pequeño",
+      textSizeMedium: "Mediano",
+      textSizeLarge: "Grande",
+      animationsLabel: "Animaciones",
+      animationsDescription: "Mostrar animaciones en las comparaciones",
+      notificationsLabel: "Notificaciones",
+      notificationsDescription: "Mostrar notificaciones de precios encontrados",
+      saveButton: "Guardar Configuración",
+      resetButton: "Restablecer",
+      aboutTitle: "Acerca de",
+      aboutDescription: "Extensión desarrollada por Eduardo Airaudo para comparar precios de productos entre MercadoLibre y eBay de manera eficiente.",
+      versionLabel: "Versión",
+      settingsSaved: "¡Configuración guardada y aplicada!",
+      settingsReset: "Configuración restablecida",
+      extensionEnabled: "¡Extensión habilitada - forzando renderizado!",
+      extensionDisabled: "Extensión deshabilitada - limpiando elementos...",
+    },
+    pt: {
+      enabled: "Habilitada",
+      disabled: "Desabilitada",
+      popupTitle: "Configuração do Comparador",
+      enabledLabel: "Estado da Extensão",
+      enabledDescription: "Habilitar ou desabilitar a extensão",
+      textSizeLabel: "Tamanho do Texto",
+      textSizeDescription: "Ajustar o tamanho do texto da comparação",
+      textSizeSmall: "Pequeno",
+      textSizeMedium: "Médio",
+      textSizeLarge: "Grande",
+      animationsLabel: "Animações",
+      animationsDescription: "Mostrar animações nas comparações",
+      notificationsLabel: "Notificações",
+      notificationsDescription: "Mostrar notificações de preços encontrados",
+      saveButton: "Salvar Configuração",
+      resetButton: "Redefinir",
+      aboutTitle: "Sobre",
+      aboutDescription: "Extensão desenvolvida por Eduardo Airaudo para comparar preços de produtos entre MercadoLibre e eBay de forma eficiente.",
+      versionLabel: "Versão",
+      settingsSaved: "Configuração salva e aplicada!",
+      settingsReset: "Configuração redefinida",
+      extensionEnabled: "Extensão habilitada - forçando renderização!",
+      extensionDisabled: "Extensão desabilitada - limpando elementos...",
+    },
+  };
 
   constructor() {
     this.init();
@@ -35,14 +95,14 @@ class PopupController {
     this.updateUI();
   }
 
-  private async loadSettings(): Promise<void> {
+  public async loadSettings(): Promise<void> {
     try {
       const result = await new Promise<{ [key: string]: any }>((resolve) => {
-        chrome.storage.sync.get(["extensionSettings"], resolve);
+        chrome.storage.sync.get(["extensionConfig"], resolve);
       });
 
-      if (result.extensionSettings) {
-        this.settings = { ...this.settings, ...result.extensionSettings };
+      if (result.extensionConfig) {
+        this.settings = { ...this.settings, ...result.extensionConfig };
       }
     } catch (error) {
       console.warn("Failed to load settings:", error);
@@ -52,7 +112,7 @@ class PopupController {
   private async saveSettings(): Promise<void> {
     try {
       await new Promise<void>((resolve, reject) => {
-        chrome.storage.sync.set({ extensionSettings: this.settings }, () => {
+        chrome.storage.sync.set({ extensionConfig: this.settings }, () => {
           if (chrome.runtime.lastError) {
             reject(chrome.runtime.lastError);
           } else {
@@ -60,6 +120,10 @@ class PopupController {
           }
         });
       });
+
+      // Notify all content scripts about the configuration change
+      await this.notifyContentScripts();
+
       this.showToast("settingsSaved");
     } catch (error) {
       console.error("Failed to save settings:", error);
@@ -75,7 +139,88 @@ class PopupController {
       this.updateTextContent();
     } catch (error) {
       console.warn("Failed to load language file:", error);
-      // Fallback to default messages if loading fails
+      // Fallback to embedded translations if loading fails
+      this.updateTextContent();
+    }
+  }
+
+  // Notify all content scripts about configuration changes
+  private async notifyContentScripts(): Promise<void> {
+    try {
+      if (chrome.tabs && chrome.tabs.query) {
+        // Get all tabs
+        const tabs = await new Promise<chrome.tabs.Tab[]>((resolve) => {
+          chrome.tabs.query({}, resolve);
+        });
+
+        // Send message to each tab's content script
+        for (const tab of tabs) {
+          try {
+            if (chrome.tabs.sendMessage && tab.id) {
+              await chrome.tabs.sendMessage(tab.id, {
+                type: "CONFIG_UPDATED",
+                config: this.settings,
+                // Special cleanup flag when extension is disabled
+                shouldCleanup: !this.settings.enabled,
+              });
+            }
+          } catch (error) {
+            // Ignore errors for tabs without content scripts
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error notifying content scripts:", error);
+    }
+  }
+
+  // Trigger cleanup across all tabs
+  private async triggerCleanup(): Promise<void> {
+    try {
+      if (chrome.tabs && chrome.tabs.query) {
+        const tabs = await new Promise<chrome.tabs.Tab[]>((resolve) => {
+          chrome.tabs.query({}, resolve);
+        });
+
+        for (const tab of tabs) {
+          try {
+            if (chrome.tabs.sendMessage && tab.id) {
+              await chrome.tabs.sendMessage(tab.id, {
+                type: "FORCE_CLEANUP",
+              });
+            }
+          } catch (error) {
+            // Ignore errors for tabs without content scripts
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error triggering cleanup:", error);
+    }
+  }
+
+  // Force re-initialization across all tabs to ensure HTML is rendered
+  private async forceReinitialize(): Promise<void> {
+    try {
+      if (chrome.tabs && chrome.tabs.query) {
+        const tabs = await new Promise<chrome.tabs.Tab[]>((resolve) => {
+          chrome.tabs.query({}, resolve);
+        });
+
+        for (const tab of tabs) {
+          try {
+            if (chrome.tabs.sendMessage && tab.id) {
+              await chrome.tabs.sendMessage(tab.id, {
+                type: "FORCE_REINITIALIZE",
+              });
+            }
+          } catch (error) {
+            // Ignore errors for tabs without content scripts
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error forcing re-initialization:", error);
     }
   }
 
@@ -83,8 +228,10 @@ class PopupController {
     const elements = document.querySelectorAll("[data-i18n]");
     elements.forEach((element) => {
       const key = element.getAttribute("data-i18n");
-      if (key && this.messages[key]) {
-        element.textContent = this.messages[key].message;
+      if (key) {
+        // Try embedded translations first, fallback to chrome messages
+        const translation = this.getTranslation(key);
+        element.textContent = translation;
       }
     });
   }
@@ -92,11 +239,21 @@ class PopupController {
   private setupEventListeners(): void {
     // Extension toggle
     const enabledToggle = document.getElementById("enabledToggle") as HTMLInputElement;
-    enabledToggle?.addEventListener("change", (e) => {
+    enabledToggle?.addEventListener("change", async (e) => {
       const target = e.target as HTMLInputElement;
       this.settings.enabled = target.checked;
       this.updateStatusText();
-      this.saveSettings();
+
+      // Show different messages based on enabled/disabled state
+      if (this.settings.enabled) {
+        await this.saveSettings();
+        // Also send a forced re-initialization message to ensure HTML is rendered
+        await this.forceReinitialize();
+        this.showToast("extensionEnabled", "success");
+      } else {
+        await this.saveSettings();
+        this.showToast("extensionDisabled", "info");
+      }
     });
 
     // Text size buttons
@@ -136,10 +293,14 @@ class PopupController {
       this.saveSettings();
     });
 
-    // Save button
+    // Save button (manual save for additional confirmation)
     const saveBtn = document.getElementById("saveBtn");
-    saveBtn?.addEventListener("click", () => {
-      this.saveSettings();
+    saveBtn?.addEventListener("click", async () => {
+      if (!this.settings.enabled) {
+        // If extension is disabled, trigger cleanup
+        await this.triggerCleanup();
+      }
+      await this.saveSettings();
     });
 
     // Reset button
@@ -149,7 +310,7 @@ class PopupController {
     });
   }
 
-  private updateUI(): void {
+  public updateUI(): void {
     this.updateStatusText();
     this.updateTextSizeButtons();
     this.updateToggles();
@@ -162,12 +323,12 @@ class PopupController {
 
     if (statusText && enabledToggle) {
       if (this.settings.enabled) {
-        statusText.textContent = this.getMessage("enabled");
-        statusText.className = "text-sm font-medium text-green-600";
+        statusText.textContent = this.getTranslation("enabled");
+        statusText.className = "text-sm font-medium text-green-600 min-w-[100px]";
         enabledToggle.checked = true;
       } else {
-        statusText.textContent = this.getMessage("disabled");
-        statusText.className = "text-sm font-medium text-red-600";
+        statusText.textContent = this.getTranslation("disabled");
+        statusText.className = "text-sm font-medium text-red-600 min-w-[100px]";
         enabledToggle.checked = false;
       }
     }
@@ -203,34 +364,45 @@ class PopupController {
   }
 
   private getMessage(key: string): string {
-    return this.messages[key]?.message || key;
+    // Try chrome messages first, fallback to embedded translations
+    if (this.messages[key]) {
+      return this.messages[key].message;
+    }
+    return this.getTranslation(key);
   }
 
-  private showToast(messageKey: string, type: "success" | "error" = "success"): void {
+  // Get translation from embedded translations
+  private getTranslation(key: string): string {
+    return this.translations[this.settings.language]?.[key] || key;
+  }
+
+  private showToast(messageKey: string, type: "success" | "error" | "info" = "success"): void {
     const toast = document.getElementById("toast");
     const toastMessage = document.getElementById("toastMessage");
 
     if (!toast || !toastMessage) return;
 
-    const message = this.getMessage(messageKey);
+    // Get message from translations
+    const message = this.getTranslation(messageKey);
     toastMessage.textContent = message;
 
-    // Update toast styling based on type
-    if (type === "error") {
-      toast.className = toast.className.replace("bg-green-500", "bg-red-500");
-    } else {
-      toast.className = toast.className.replace("bg-red-500", "bg-green-500");
-    }
+    // Set color based on type
+    const colors = {
+      success: "bg-green-500",
+      error: "bg-red-500",
+      info: "bg-blue-500",
+    };
+
+    toast.className = `fixed bottom-4 left-4 right-4 ${colors[type]} text-white p-3 rounded-lg shadow-lg transform transition-transform duration-300 ease-out toast`;
 
     // Show toast
-    toast.classList.remove("hidden");
-    setTimeout(() => {
-      toast.style.transform = "translateY(0)";
-    }, 10);
+    toast.classList.remove("hidden", "translate-y-full");
+    toast.classList.add("translate-y-0");
 
     // Hide toast after 3 seconds
     setTimeout(() => {
-      toast.style.transform = "translateY(100px)";
+      toast.classList.remove("translate-y-0");
+      toast.classList.add("translate-y-full");
       setTimeout(() => {
         toast.classList.add("hidden");
       }, 300);
@@ -260,10 +432,23 @@ class PopupController {
 
 // Initialize popup when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
-  new PopupController();
+  // Check if we have the required Chrome APIs
+  if (typeof chrome === "undefined" || !chrome.storage) {
+    console.error("Chrome extension APIs not available");
+    document.body.innerHTML = '<div style="padding: 20px; text-align: center;">Extension APIs not available. Please reload the extension.</div>';
+    return;
+  }
+
+  // Create global instance
+  (window as any).popupController = new PopupController();
 });
 
-// Export for potential use by other scripts
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = { PopupController };
-}
+// Handle popup reopening to reload configuration
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && (window as any).popupController) {
+    // Popup became visible, reload configuration
+    (window as any).popupController.loadSettings().then(() => {
+      (window as any).popupController.updateUI();
+    });
+  }
+});
