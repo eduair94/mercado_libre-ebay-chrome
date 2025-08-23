@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test All MercadoLibre Countries Support</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background: #f0f2f5;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .country-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+      }
+      .country-card {
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 15px;
+        background: #fafafa;
+      }
+      .country-name {
+        font-weight: bold;
+        color: #3483fa;
+        margin-bottom: 10px;
+      }
+      .domain-list {
+        font-size: 12px;
+        color: #666;
+        margin: 5px 0;
+      }
+      .currency-info {
+        background: #e8f5e8;
+        padding: 5px 10px;
+        border-radius: 3px;
+        font-size: 14px;
+        margin-top: 10px;
+      }
+      h1 {
+        color: #333;
+        text-align: center;
+      }
+      .summary {
+        background: #e3f2fd;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🌎 MercadoLibre Extension - All Countries Support Test</h1>
+      
+      <div class="summary">
+        <h3>Extension Coverage Summary</h3>
+        <p><strong>Total Countries Supported:</strong> <span id="countryCount">18</span></p>
+        <p><strong>Total Domains:</strong> <span id="domainCount">72</span></p>
+        <p><strong>Status:</strong> ✅ All MercadoLibre countries are now supported!</p>
+      </div>
+
+      <div class="country-grid" id="countryGrid">
+        <!-- Countries will be populated by JavaScript -->
+      </div>
+    </div>
+
+    <script>
+      // Complete list of MercadoLibre countries and their information
+      const countries = [
+        {
+          name: "Argentina",
+          code: "ar",
+          currency: "ARS - Peso argentino",
+          domains: [
+            "https://mercadolibre.com.ar/*",
+            "https://www.mercadolibre.com.ar/*", 
+            "https://listado.mercadolibre.com.ar/*",
+            "https://articulo.mercadolibre.com.ar/*"
+          ]
+        },
+        {
+          name: "Bolivia",
+          code: "bo",
+          currency: "BOB - Boliviano",
+          domains: [
+            "https://mercadolibre.com.bo/*",
+            "https://www.mercadolibre.com.bo/*",
+            "https://listado.mercadolibre.com.bo/*",
+            "https://articulo.mercadolibre.com.bo/*"
+          ]
+        },
+        {
+          name: "Brazil",
+          code: "br",
+          currency: "BRL - Real",
+          domains: [
+            "https://mercadolivre.com.br/*",
+            "https://www.mercadolivre.com.br/*",
+            "https://lista.mercadolivre.com.br/*",
+            "https://produto.mercadolivre.com.br/*"
+          ]
+        },
+        {
+          name: "Chile",
+          code: "cl",
+          currency: "CLP - Peso chileno",
+          domains: [
+            "https://mercadolibre.cl/*",
+            "https://www.mercadolibre.cl/*",
+            "https://listado.mercadolibre.cl/*",
+            "https://articulo.mercadolibre.cl/*"
+          ]
+        },
+        {
+          name: "Colombia",
+          code: "co",
+          currency: "COP - Peso colombiano",
+          domains: [
+            "https://mercadolibre.com.co/*",
+            "https://www.mercadolibre.com.co/*",
+            "https://listado.mercadolibre.com.co/*",
+            "https://articulo.mercadolibre.com.co/*"
+          ]
+        },
+        {
+          name: "Costa Rica",
+          code: "cr",
+          currency: "CRC - Colón costarricense",
+          domains: [
+            "https://mercadolibre.co.cr/*",
+            "https://www.mercadolibre.co.cr/*",
+            "https://listado.mercadolibre.co.cr/*",
+            "https://articulo.mercadolibre.co.cr/*"
+          ]
+        },
+        {
+          name: "Dominican Republic",
+          code: "do",
+          currency: "DOP - Peso dominicano",
+          domains: [
+            "https://mercadolibre.com.do/*",
+            "https://www.mercadolibre.com.do/*",
+            "https://listado.mercadolibre.com.do/*",
+            "https://articulo.mercadolibre.com.do/*"
+          ]
+        },
+        {
+          name: "Ecuador",
+          code: "ec",
+          currency: "USD - Dólar estadounidense",
+          domains: [
+            "https://mercadolibre.com.ec/*",
+            "https://www.mercadolibre.com.ec/*",
+            "https://listado.mercadolibre.com.ec/*",
+            "https://articulo.mercadolibre.com.ec/*"
+          ]
+        },
+        {
+          name: "El Salvador",
+          code: "sv",
+          currency: "USD - Dólar estadounidense",
+          domains: [
+            "https://mercadolibre.com.sv/*",
+            "https://www.mercadolibre.com.sv/*",
+            "https://listado.mercadolibre.com.sv/*",
+            "https://articulo.mercadolibre.com.sv/*"
+          ]
+        },
+        {
+          name: "Guatemala",
+          code: "gt",
+          currency: "GTQ - Quetzal",
+          domains: [
+            "https://mercadolibre.com.gt/*",
+            "https://www.mercadolibre.com.gt/*",
+            "https://listado.mercadolibre.com.gt/*",
+            "https://articulo.mercadolibre.com.gt/*"
+          ]
+        },
+        {
+          name: "Honduras",
+          code: "hn",
+          currency: "HNL - Lempira",
+          domains: [
+            "https://mercadolibre.com.hn/*",
+            "https://www.mercadolibre.com.hn/*",
+            "https://listado.mercadolibre.com.hn/*",
+            "https://articulo.mercadolibre.com.hn/*"
+          ]
+        },
+        {
+          name: "Mexico",
+          code: "mx",
+          currency: "MXN - Peso mexicano",
+          domains: [
+            "https://mercadolibre.com.mx/*",
+            "https://www.mercadolibre.com.mx/*",
+            "https://listado.mercadolibre.com.mx/*",
+            "https://articulo.mercadolibre.com.mx/*"
+          ]
+        },
+        {
+          name: "Nicaragua",
+          code: "ni",
+          currency: "NIO - Córdoba oro",
+          domains: [
+            "https://mercadolibre.com.ni/*",
+            "https://www.mercadolibre.com.ni/*",
+            "https://listado.mercadolibre.com.ni/*",
+            "https://articulo.mercadolibre.com.ni/*"
+          ]
+        },
+        {
+          name: "Panama",
+          code: "pa",
+          currency: "PAB - Balboa",
+          domains: [
+            "https://mercadolibre.com.pa/*",
+            "https://www.mercadolibre.com.pa/*",
+            "https://listado.mercadolibre.com.pa/*",
+            "https://articulo.mercadolibre.com.pa/*"
+          ]
+        },
+        {
+          name: "Paraguay",
+          code: "py",
+          currency: "PYG - Guaraní",
+          domains: [
+            "https://mercadolibre.com.py/*",
+            "https://www.mercadolibre.com.py/*",
+            "https://listado.mercadolibre.com.py/*",
+            "https://articulo.mercadolibre.com.py/*"
+          ]
+        },
+        {
+          name: "Peru",
+          code: "pe",
+          currency: "PEN - Sol",
+          domains: [
+            "https://mercadolibre.com.pe/*",
+            "https://www.mercadolibre.com.pe/*",
+            "https://listado.mercadolibre.com.pe/*",
+            "https://articulo.mercadolibre.com.pe/*"
+          ]
+        },
+        {
+          name: "Uruguay",
+          code: "uy",
+          currency: "UYU - Peso uruguayo",
+          domains: [
+            "https://mercadolibre.com.uy/*",
+            "https://www.mercadolibre.com.uy/*",
+            "https://listado.mercadolibre.com.uy/*",
+            "https://articulo.mercadolibre.com.uy/*"
+          ]
+        },
+        {
+          name: "Venezuela",
+          code: "ve",
+          currency: "VES - Bolívar soberano",
+          domains: [
+            "https://mercadolibre.com.ve/*",
+            "https://www.mercadolibre.com.ve/*",
+            "https://listado.mercadolibre.com.ve/*",
+            "https://articulo.mercadolibre.com.ve/*"
+          ]
+        }
+      ];
+
+      // Populate the country grid
+      const countryGrid = document.getElementById("countryGrid");
+      let totalDomains = 0;
+
+      countries.forEach(country => {
+        totalDomains += country.domains.length;
+        
+        const countryCard = document.createElement("div");
+        countryCard.className = "country-card";
+        
+        countryCard.innerHTML = `
+          <div class="country-name">🇿🇦 ${country.name} (.${country.code})</div>
+          <div class="currency-info">💰 ${country.currency}</div>
+          <div class="domain-list">
+            <strong>Supported Domains:</strong><br>
+            ${country.domains.map(domain => `• ${domain}`).join('<br>')}
+          </div>
+        `;
+        
+        countryGrid.appendChild(countryCard);
+      });
+
+      // Update summary
+      document.getElementById("countryCount").textContent = countries.length;
+      document.getElementById("domainCount").textContent = totalDomains;
+
+      console.log("🎯 MercadoLibre Extension - All Countries Support Test Loaded!");
+      console.log("📊 Countries supported:", countries.length);
+      console.log("🌐 Total domains:", totalDomains);
+      console.log("✅ Extension now supports all MercadoLibre countries!");
+    </script>
+  </body>
+</html>

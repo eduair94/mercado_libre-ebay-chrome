@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test MercadoLibre Argentina Product Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-container {
+            border: 1px solid #ddd;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .test-url {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+        .product-simulation {
+            background: #fff159;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .price {
+            font-size: 24px;
+            color: #333;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .title {
+            font-size: 18px;
+            color: #333;
+            margin: 10px 0;
+        }
+        .currency-test {
+            background: #e3f2fd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test MercadoLibre Argentina Product Page</h1>
+    
+    <div class="test-container">
+        <h2>✅ Extension Should Work On These URLs:</h2>
+        
+        <div class="test-url">
+            <strong>Product Page:</strong><br>
+            https://articulo.mercadolibre.com.ar/MLA-123456789-samsung-galaxy-s23-ultra-256gb
+        </div>
+        
+        <div class="test-url">
+            <strong>Listing Page:</strong><br>
+            https://listado.mercadolibre.com.ar/samsung-galaxy
+        </div>
+        
+        <div class="test-url">
+            <strong>Main Site:</strong><br>
+            https://www.mercadolibre.com.ar/
+        </div>
+    </div>
+
+    <div class="product-simulation">
+        <h2>📱 Simulated Product (Samsung Galaxy S23 Ultra)</h2>
+        <div class="title">Samsung Galaxy S23 Ultra 256GB Phantom Black</div>
+        <div class="price">$ 299.999</div>
+        <div style="color: #00a650;">✅ Envío gratis</div>
+        
+        <div class="currency-test">
+            <h3>🔄 Currency Detection Test</h3>
+            <p><strong>Expected Behavior:</strong></p>
+            <ul>
+                <li>Price "$ 299.999" should be detected as ARS (Peso argentino)</li>
+                <li>NOT as USD because it doesn't have "US$" prefix</li>
+                <li>Extension should search for "Samsung Galaxy S23 Ultra 256GB" on eBay/Amazon</li>
+                <li>Show price comparisons in ARS equivalent</li>
+            </ul>
+            
+            <div style="background: #fff; padding: 10px; border-radius: 4px; margin: 10px 0;">
+                <strong>Currency Mapping Check:</strong><br>
+                Country Code: AR → Currency: ARS<br>
+                Domain: articulo.mercadolibre.com.ar → Should be detected ✅
+            </div>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>🎯 Manual Testing Instructions</h2>
+        <ol>
+            <li><strong>Load Extension:</strong> Install the extension in Chrome</li>
+            <li><strong>Visit Argentina Product Page:</strong> Go to any articulo.mercadolibre.com.ar URL</li>
+            <li><strong>Check for Extension Buttons:</strong> Look for eBay/Amazon comparison buttons</li>
+            <li><strong>Test Currency Detection:</strong> Verify prices are handled as ARS, not USD</li>
+            <li><strong>Test Link Redirection:</strong> Click buttons to ensure no "about:blank" issues</li>
+        </ol>
+    </div>
+
+    <div class="test-container">
+        <h2>🌎 All Supported Countries Summary</h2>
+        <p><strong>Total Countries:</strong> 18</p>
+        <p><strong>Total Domain Patterns:</strong> 72 (4 patterns per country)</p>
+        <p><strong>Pattern Types:</strong></p>
+        <ul>
+            <li>Main site (mercadolibre.com.* or mercadolivre.com.br)</li>
+            <li>WWW subdomain (www.mercadolibre.com.*)</li>
+            <li>Listing pages (listado.mercadolibre.com.* or lista.mercadolivre.com.br)</li>
+            <li>Product pages (articulo.mercadolibre.com.* or produto.mercadolivre.com.br)</li>
+        </ul>
+    </div>
+
+    <script>
+        console.log('🧪 MercadoLibre Argentina Test Page Loaded');
+        console.log('🔍 Check Console for Extension Activity');
+        console.log('📍 Current URL pattern should match: articulo.mercadolibre.com.ar');
+        
+        // Simulate the extension detection
+        setTimeout(() => {
+            console.log('✅ Extension should have loaded by now');
+            console.log('🔍 Look for eBay/Amazon comparison buttons on the page');
+        }, 2000);
+    </script>
+</body>
+</html>

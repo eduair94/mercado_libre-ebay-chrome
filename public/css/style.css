@@ -261,12 +261,14 @@
 
 /* Ensure MercadoLibre product cards have proper structure for button placement */
 .ui-search-result,
-.poly-card {
+.poly-card,
+.andes-card {
   position: relative !important;
 }
 
 .ui-search-layout .ui-search-result,
-.ui-search-layout .poly-card {
+.ui-search-layout .poly-card,
+.dynamic-carousel .andes-card {
   position: relative !important;
 }
 
@@ -365,13 +367,51 @@
 }
 
 /* Ensure all recommendation cards have relative positioning for absolute button containers */
-.recos-polycard {
+.recos-polycard,
+.andes-card.andes-card--flat {
   position: relative !important;
 }
 
 .recos-polycard .poly-card__content,
-.recos-polycard .poly-component {
+.recos-polycard .poly-component,
+.andes-card .dynamic-carousel__item-container {
   position: relative !important;
+}
+
+/* Dynamic carousel card styling */
+.andes-card.andes-card--flat .btn_ml_app_container,
+.dynamic-carousel .andes-card .btn_ml_app_container {
+  position: absolute !important;
+  width: 100% !important;
+  top: 0 !important;
+  left: 0 !important;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  z-index: 1000;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 249, 250, 0.95));
+  border-radius: 8px;
+  padding: 6px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.2s ease;
+  opacity: 0.9;
+  max-width: 150px;
+}
+
+.andes-card.andes-card--flat .btn_ml_app_container:hover,
+.dynamic-carousel .andes-card .btn_ml_app_container:hover {
+  opacity: 1;
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.2);
+}
+
+.andes-card.andes-card--flat .btn_ml_app,
+.dynamic-carousel .andes-card .btn_ml_app {
+  padding: 6px 8px !important;
+  min-height: 28px !important;
+  font-size: 11px !important;
+  margin-bottom: 2px !important;
 }
 
 /* Responsive adjustments for product page */

@@ -2,7 +2,7 @@
   "name": "__MSG_extensionName__",
   "description": "__MSG_extensionDescription__",
   "default_locale": "es",
-  "version": "0.1.7",
+  "version": "0.2.0",
   "manifest_version": 3,
   "icons": {
     "16": "/img/16.png",
@@ -25,18 +25,76 @@
   "web_accessible_resources": [
     {
       "resources": ["css/style.css"],
-      "matches": ["https://mercadolibre.com.uy/*", "https://www.mercadolibre.com.uy/*", "https://listado.mercadolibre.com.uy/*", "https://mercadolibre.com.co/*", "https://www.mercadolibre.com.co/*", "https://listado.mercadolibre.com.co/*"]
+      "matches": [
+        "https://mercadolibre.com.ar/*", "https://www.mercadolibre.com.ar/*", "https://listado.mercadolibre.com.ar/*", "https://articulo.mercadolibre.com.ar/*",
+        "https://mercadolibre.com.bo/*", "https://www.mercadolibre.com.bo/*", "https://listado.mercadolibre.com.bo/*", "https://articulo.mercadolibre.com.bo/*",
+        "https://mercadolivre.com.br/*", "https://www.mercadolivre.com.br/*", "https://lista.mercadolivre.com.br/*", "https://produto.mercadolivre.com.br/*",
+        "https://mercadolibre.cl/*", "https://www.mercadolibre.cl/*", "https://listado.mercadolibre.cl/*", "https://articulo.mercadolibre.cl/*",
+        "https://mercadolibre.com.co/*", "https://www.mercadolibre.com.co/*", "https://listado.mercadolibre.com.co/*", "https://articulo.mercadolibre.com.co/*",
+        "https://mercadolibre.co.cr/*", "https://www.mercadolibre.co.cr/*", "https://listado.mercadolibre.co.cr/*", "https://articulo.mercadolibre.co.cr/*",
+        "https://mercadolibre.com.do/*", "https://www.mercadolibre.com.do/*", "https://listado.mercadolibre.com.do/*", "https://articulo.mercadolibre.com.do/*",
+        "https://mercadolibre.com.ec/*", "https://www.mercadolibre.com.ec/*", "https://listado.mercadolibre.com.ec/*", "https://articulo.mercadolibre.com.ec/*",
+        "https://mercadolibre.com.sv/*", "https://www.mercadolibre.com.sv/*", "https://listado.mercadolibre.com.sv/*", "https://articulo.mercadolibre.com.sv/*",
+        "https://mercadolibre.com.gt/*", "https://www.mercadolibre.com.gt/*", "https://listado.mercadolibre.com.gt/*", "https://articulo.mercadolibre.com.gt/*",
+        "https://mercadolibre.com.hn/*", "https://www.mercadolibre.com.hn/*", "https://listado.mercadolibre.com.hn/*", "https://articulo.mercadolibre.com.hn/*",
+        "https://mercadolibre.com.mx/*", "https://www.mercadolibre.com.mx/*", "https://listado.mercadolibre.com.mx/*", "https://articulo.mercadolibre.com.mx/*",
+        "https://mercadolibre.com.ni/*", "https://www.mercadolibre.com.ni/*", "https://listado.mercadolibre.com.ni/*", "https://articulo.mercadolibre.com.ni/*",
+        "https://mercadolibre.com.pa/*", "https://www.mercadolibre.com.pa/*", "https://listado.mercadolibre.com.pa/*", "https://articulo.mercadolibre.com.pa/*",
+        "https://mercadolibre.com.py/*", "https://www.mercadolibre.com.py/*", "https://listado.mercadolibre.com.py/*", "https://articulo.mercadolibre.com.py/*",
+        "https://mercadolibre.com.pe/*", "https://www.mercadolibre.com.pe/*", "https://listado.mercadolibre.com.pe/*", "https://articulo.mercadolibre.com.pe/*",
+        "https://mercadolibre.com.uy/*", "https://www.mercadolibre.com.uy/*", "https://listado.mercadolibre.com.uy/*", "https://articulo.mercadolibre.com.uy/*",
+        "https://mercadolibre.com.ve/*", "https://www.mercadolibre.com.ve/*", "https://listado.mercadolibre.com.ve/*", "https://articulo.mercadolibre.com.ve/*"
+      ]
     }
   ],
   "content_scripts": [
     {
       "css": ["css/style.css"],
-      "matches": ["https://mercadolibre.com.uy/*", "https://www.mercadolibre.com.uy/*", "https://listado.mercadolibre.com.uy/*", "https://mercadolibre.com.co/*", "https://www.mercadolibre.com.co/*", "https://listado.mercadolibre.com.co/*"],
+      "matches": [
+        "https://mercadolibre.com.ar/*", "https://www.mercadolibre.com.ar/*", "https://listado.mercadolibre.com.ar/*", "https://articulo.mercadolibre.com.ar/*",
+        "https://mercadolibre.com.bo/*", "https://www.mercadolibre.com.bo/*", "https://listado.mercadolibre.com.bo/*", "https://articulo.mercadolibre.com.bo/*",
+        "https://mercadolivre.com.br/*", "https://www.mercadolivre.com.br/*", "https://lista.mercadolivre.com.br/*", "https://produto.mercadolivre.com.br/*",
+        "https://mercadolibre.cl/*", "https://www.mercadolibre.cl/*", "https://listado.mercadolibre.cl/*", "https://articulo.mercadolibre.cl/*",
+        "https://mercadolibre.com.co/*", "https://www.mercadolibre.com.co/*", "https://listado.mercadolibre.com.co/*", "https://articulo.mercadolibre.com.co/*",
+        "https://mercadolibre.co.cr/*", "https://www.mercadolibre.co.cr/*", "https://listado.mercadolibre.co.cr/*", "https://articulo.mercadolibre.co.cr/*",
+        "https://mercadolibre.com.do/*", "https://www.mercadolibre.com.do/*", "https://listado.mercadolibre.com.do/*", "https://articulo.mercadolibre.com.do/*",
+        "https://mercadolibre.com.ec/*", "https://www.mercadolibre.com.ec/*", "https://listado.mercadolibre.com.ec/*", "https://articulo.mercadolibre.com.ec/*",
+        "https://mercadolibre.com.sv/*", "https://www.mercadolibre.com.sv/*", "https://listado.mercadolibre.com.sv/*", "https://articulo.mercadolibre.com.sv/*",
+        "https://mercadolibre.com.gt/*", "https://www.mercadolibre.com.gt/*", "https://listado.mercadolibre.com.gt/*", "https://articulo.mercadolibre.com.gt/*",
+        "https://mercadolibre.com.hn/*", "https://www.mercadolibre.com.hn/*", "https://listado.mercadolibre.com.hn/*", "https://articulo.mercadolibre.com.hn/*",
+        "https://mercadolibre.com.mx/*", "https://www.mercadolibre.com.mx/*", "https://listado.mercadolibre.com.mx/*", "https://articulo.mercadolibre.com.mx/*",
+        "https://mercadolibre.com.ni/*", "https://www.mercadolibre.com.ni/*", "https://listado.mercadolibre.com.ni/*", "https://articulo.mercadolibre.com.ni/*",
+        "https://mercadolibre.com.pa/*", "https://www.mercadolibre.com.pa/*", "https://listado.mercadolibre.com.pa/*", "https://articulo.mercadolibre.com.pa/*",
+        "https://mercadolibre.com.py/*", "https://www.mercadolibre.com.py/*", "https://listado.mercadolibre.com.py/*", "https://articulo.mercadolibre.com.py/*",
+        "https://mercadolibre.com.pe/*", "https://www.mercadolibre.com.pe/*", "https://listado.mercadolibre.com.pe/*", "https://articulo.mercadolibre.com.pe/*",
+        "https://mercadolibre.com.uy/*", "https://www.mercadolibre.com.uy/*", "https://listado.mercadolibre.com.uy/*", "https://articulo.mercadolibre.com.uy/*",
+        "https://mercadolibre.com.ve/*", "https://www.mercadolibre.com.ve/*", "https://listado.mercadolibre.com.ve/*", "https://articulo.mercadolibre.com.ve/*"
+      ],
       "js": ["js/content_script.js"],
       "run_at": "document_end"
     }
   ],
   "options_page": "options.html",
   "permissions": ["storage", "tabs"],
-  "host_permissions": ["https://www.ebay.com/*", "https://www.amazon.com/*", "https://amazon.com/*", "https://ebay.com/*", "https://mercadolibre.com.uy/*", "https://www.mercadolibre.com.uy/*", "https://listado.mercadolibre.com.uy/*", "https://mercadolibre.com.co/*", "https://www.mercadolibre.com.co/*", "https://listado.mercadolibre.com.co/*"]
+  "host_permissions": [
+    "https://www.ebay.com/*", "https://www.amazon.com/*", "https://amazon.com/*", "https://ebay.com/*", 
+    "https://mercadolibre.com.ar/*", "https://www.mercadolibre.com.ar/*", "https://listado.mercadolibre.com.ar/*", "https://articulo.mercadolibre.com.ar/*",
+    "https://mercadolibre.com.bo/*", "https://www.mercadolibre.com.bo/*", "https://listado.mercadolibre.com.bo/*", "https://articulo.mercadolibre.com.bo/*",
+    "https://mercadolivre.com.br/*", "https://www.mercadolivre.com.br/*", "https://lista.mercadolivre.com.br/*", "https://produto.mercadolivre.com.br/*",
+    "https://mercadolibre.cl/*", "https://www.mercadolibre.cl/*", "https://listado.mercadolibre.cl/*", "https://articulo.mercadolibre.cl/*",
+    "https://mercadolibre.com.co/*", "https://www.mercadolibre.com.co/*", "https://listado.mercadolibre.com.co/*", "https://articulo.mercadolibre.com.co/*",
+    "https://mercadolibre.co.cr/*", "https://www.mercadolibre.co.cr/*", "https://listado.mercadolibre.co.cr/*", "https://articulo.mercadolibre.co.cr/*",
+    "https://mercadolibre.com.do/*", "https://www.mercadolibre.com.do/*", "https://listado.mercadolibre.com.do/*", "https://articulo.mercadolibre.com.do/*",
+    "https://mercadolibre.com.ec/*", "https://www.mercadolibre.com.ec/*", "https://listado.mercadolibre.com.ec/*", "https://articulo.mercadolibre.com.ec/*",
+    "https://mercadolibre.com.sv/*", "https://www.mercadolibre.com.sv/*", "https://listado.mercadolibre.com.sv/*", "https://articulo.mercadolibre.com.sv/*",
+    "https://mercadolibre.com.gt/*", "https://www.mercadolibre.com.gt/*", "https://listado.mercadolibre.com.gt/*", "https://articulo.mercadolibre.com.gt/*",
+    "https://mercadolibre.com.hn/*", "https://www.mercadolibre.com.hn/*", "https://listado.mercadolibre.com.hn/*", "https://articulo.mercadolibre.com.hn/*",
+    "https://mercadolibre.com.mx/*", "https://www.mercadolibre.com.mx/*", "https://listado.mercadolibre.com.mx/*", "https://articulo.mercadolibre.com.mx/*",
+    "https://mercadolibre.com.ni/*", "https://www.mercadolibre.com.ni/*", "https://listado.mercadolibre.com.ni/*", "https://articulo.mercadolibre.com.ni/*",
+    "https://mercadolibre.com.pa/*", "https://www.mercadolibre.com.pa/*", "https://listado.mercadolibre.com.pa/*", "https://articulo.mercadolibre.com.pa/*",
+    "https://mercadolibre.com.py/*", "https://www.mercadolibre.com.py/*", "https://listado.mercadolibre.com.py/*", "https://articulo.mercadolibre.com.py/*",
+    "https://mercadolibre.com.pe/*", "https://www.mercadolibre.com.pe/*", "https://listado.mercadolibre.com.pe/*", "https://articulo.mercadolibre.com.pe/*",
+    "https://mercadolibre.com.uy/*", "https://www.mercadolibre.com.uy/*", "https://listado.mercadolibre.com.uy/*", "https://articulo.mercadolibre.com.uy/*",
+    "https://mercadolibre.com.ve/*", "https://www.mercadolibre.com.ve/*", "https://listado.mercadolibre.com.ve/*", "https://articulo.mercadolibre.com.ve/*"
+  ]
 }

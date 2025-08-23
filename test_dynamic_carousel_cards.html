@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Dynamic Carousel Cards</title>
+    <style>
+        body {
+            font-family: 'Proxima Nova', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #ebebeb;
+        }
+        
+        .dynamic-carousel {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            padding: 20px;
+        }
+        
+        .andes-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 1px 0 rgba(0,0,0,.1);
+            width: 280px;
+            transition: all 0.2s ease;
+        }
+        
+        .andes-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,.12);
+        }
+        
+        .dynamic-carousel__item-container {
+            padding: 0;
+        }
+        
+        .splinter-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        
+        .dynamic-carousel__link-container {
+            padding: 16px;
+        }
+        
+        .dynamic-carousel__img {
+            width: 100%;
+            height: 200px;
+            object-fit: contain;
+            margin-bottom: 16px;
+        }
+        
+        .dynamic-carousel__item-content {
+            min-height: 120px;
+        }
+        
+        .dynamic-carousel__oldprice {
+            text-decoration: line-through;
+            color: #999;
+            font-size: 14px;
+            display: block;
+            margin-bottom: 4px;
+        }
+        
+        .dynamic-carousel__price-block {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .dynamic-carousel__price {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .dynamic-carousel__discount {
+            background: #00a650;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .dynamic-carousel__shipping-container {
+            color: #00a650;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .dynamic-carousel__title {
+            font-size: 14px;
+            line-height: 1.3;
+            color: #333;
+            margin: 0;
+        }
+        
+        .test-info {
+            background: #e3f2fd;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .test-info h2 {
+            margin: 0 0 8px 0;
+            color: #1976d2;
+        }
+        
+        .test-info p {
+            margin: 0;
+            color: #0d47a1;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-info">
+        <h2>🧪 Test: Dynamic Carousel Cards (andes-card)</h2>
+        <p>This page tests the new support for dynamic carousel cards using the andes-card structure. The extension should now detect and add comparison buttons to these cards.</p>
+    </div>
+
+    <div class="dynamic-carousel">
+        <!-- Card 1: Notebook HP -->
+        <div class="andes-card andes-card--flat andes-card--padding-16 andes-card--animated" id=":rb:">
+            <div class="dynamic-carousel__item-container">
+                <a class="splinter-link" href="https://www.mercadolibre.com.uy/notebook-hp-pavilion-16-ag0070wm-512gb-8gb-ram-amd-ryzen-7-8840u-graficos-amd-radeon-windows-11-home/p/MLU48952673" target="_self">
+                    <div class="dynamic-carousel__link-container">
+                        <img decoding="async" src="https://http2.mlstatic.com/D_Q_NP_2X_607017-MLA88089003753_072025-P.webp" class="dynamic-carousel__img" alt="Notebook HP Pavilion">
+                        <div class="dynamic-carousel__item-content with-discount">
+                            <span class="dynamic-carousel__oldprice">US$ 999</span>
+                            <div class="dynamic-carousel__price-block">
+                                <span class="dynamic-carousel__price"><span>US$ 729</span></span>
+                                <div class="dynamic-carousel__price-additional-info">
+                                    <sup class="dynamic-carousel__discount">27% OFF</sup>
+                                </div>
+                            </div>
+                            <div class="dynamic-carousel__shipping-container">
+                                <span>Envío gratis</span>
+                            </div>
+                            <h3 class="dynamic-carousel__title">Notebook HP Pavilion 16-AG0070WM 512GB / 8GB RAM AMD Ryzen 7 8840U Gráficos AMD Radeon Windows 11 Home</h3>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Card 2: MacBook Air -->
+        <div class="andes-card andes-card--flat andes-card--padding-16 andes-card--animated" id=":rc:">
+            <div class="dynamic-carousel__item-container">
+                <a class="splinter-link" href="https://www.mercadolibre.com.uy/macbook-air-13-chip-m2-de-apple-cpu-8-nucleos-y-gpu-8-nucleos-256gb-gris-espacial/p/MLU123456789" target="_self">
+                    <div class="dynamic-carousel__link-container">
+                        <img decoding="async" src="https://http2.mlstatic.com/D_Q_NP_2X_123456-MLA89012003753_072025-P.webp" class="dynamic-carousel__img" alt="MacBook Air M2">
+                        <div class="dynamic-carousel__item-content with-discount">
+                            <span class="dynamic-carousel__oldprice">US$ 1,299</span>
+                            <div class="dynamic-carousel__price-block">
+                                <span class="dynamic-carousel__price"><span>US$ 1,199</span></span>
+                                <div class="dynamic-carousel__price-additional-info">
+                                    <sup class="dynamic-carousel__discount">8% OFF</sup>
+                                </div>
+                            </div>
+                            <div class="dynamic-carousel__shipping-container">
+                                <span>Envío gratis</span>
+                            </div>
+                            <h3 class="dynamic-carousel__title">MacBook Air 13" Chip M2 de Apple CPU 8 núcleos y GPU 8 núcleos 256GB Gris espacial</h3>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Card 3: Dell Inspiron (Uruguayan Pesos) -->
+        <div class="andes-card andes-card--flat andes-card--padding-16 andes-card--animated" id=":rd:">
+            <div class="dynamic-carousel__item-container">
+                <a class="splinter-link" href="https://www.mercadolibre.com.uy/dell-inspiron-15-3000-intel-core-i5/p/MLU987654321" target="_self">
+                    <div class="dynamic-carousel__link-container">
+                        <img decoding="async" src="https://http2.mlstatic.com/D_Q_NP_2X_789012-MLA90123003753_072025-P.webp" class="dynamic-carousel__img" alt="Dell Inspiron 15">
+                        <div class="dynamic-carousel__item-content">
+                            <div class="dynamic-carousel__price-block">
+                                <span class="dynamic-carousel__price"><span>$ 24,590</span></span>
+                            </div>
+                            <div class="dynamic-carousel__shipping-container">
+                                <span>Envío gratis</span>
+                            </div>
+                            <h3 class="dynamic-carousel__title">Dell Inspiron 15 3000 Intel Core i5 1035G1 8GB RAM 256GB SSD Windows 11</h3>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Card 4: Gaming Laptop -->
+        <div class="andes-card andes-card--flat andes-card--padding-16 andes-card--animated" id=":re:">
+            <div class="dynamic-carousel__item-container">
+                <a class="splinter-link" href="https://www.mercadolibre.com.uy/gaming-laptop-asus-rog-strix/p/MLU456789012" target="_self">
+                    <div class="dynamic-carousel__link-container">
+                        <img decoding="async" src="https://http2.mlstatic.com/D_Q_NP_2X_345678-MLA91234003753_072025-P.webp" class="dynamic-carousel__img" alt="ASUS ROG Strix">
+                        <div class="dynamic-carousel__item-content with-discount">
+                            <span class="dynamic-carousel__oldprice">US$ 1,899</span>
+                            <div class="dynamic-carousel__price-block">
+                                <span class="dynamic-carousel__price"><span>US$ 1,599</span></span>
+                                <div class="dynamic-carousel__price-additional-info">
+                                    <sup class="dynamic-carousel__discount">16% OFF</sup>
+                                </div>
+                            </div>
+                            <div class="dynamic-carousel__shipping-container">
+                                <span>Envío gratis</span>
+                            </div>
+                            <h3 class="dynamic-carousel__title">Gaming Laptop ASUS ROG Strix G15 AMD Ryzen 7 RTX 3060 16GB RAM 1TB SSD</h3>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-info" style="margin-top: 30px;">
+        <h2>✅ Expected Behavior</h2>
+        <p>Each card should show eBay and Amazon comparison buttons in the top-left corner when the extension is loaded. The buttons should correctly parse the price format (US$ for USD prices, $ for UYU prices) and perform price comparisons accordingly.</p>
+    </div>
+</body>
+</html>

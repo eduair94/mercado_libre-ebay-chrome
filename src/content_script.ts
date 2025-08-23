@@ -15,13 +15,13 @@ console.log("%c🎯 ON MERCADOLIBRE:", isOnMercadoLibre ? "✅ YES" : "❌ NO", 
 // Constants
 const SELECTORS = {
   // Search page product item selectors
-  PRODUCT_ITEMS: ".ui-search-layout .ui-search-result, .ui-search-layout .poly-card, .poly-card",
+  PRODUCT_ITEMS: ".ui-search-layout .ui-search-result, .ui-search-layout .poly-card, .poly-card, .andes-card.andes-card--flat.andes-card--padding-16",
   PRODUCT_TITLE_OLD: ".ui-search-item__title",
-  PRODUCT_TITLE_NEW: ".poly-component__title",
+  PRODUCT_TITLE_NEW: ".poly-component__title, .dynamic-carousel__title",
 
   // Search page price selectors
   PRICE_CURRENCY_OLD: ".ui-search-price__second-line .andes-money-amount__currency-symbol",
-  PRICE_CURRENCY_NEW: ".poly-price__current .andes-money-amount__currency-symbol, .poly-component__price .andes-money-amount__currency-symbol",
+  PRICE_CURRENCY_NEW: ".poly-price__current .andes-money-amount__currency-symbol, .poly-component__price .andes-money-amount__currency-symbol, .dynamic-carousel__price span",
   PRICE_FRACTION_OLD: ".ui-search-price__second-line .andes-money-amount__fraction",
   PRICE_FRACTION_NEW: ".poly-price__current .andes-money-amount__fraction, .poly-component__price .andes-money-amount__fraction",
 
@@ -32,10 +32,10 @@ const SELECTORS = {
   PDP_MAIN_PRICE_FRACTION: "#price .andes-money-amount__fraction",
 
   // Product page recommendations selectors
-  PDP_RECOMMENDATIONS_CONTAINER: ".ui-recommendations-carousel-wrapper-ref, .andes-carousel-snapped__wrapper",
-  PDP_RECOMMENDATION_ITEMS: ".andes-carousel-snapped__slide .recos-polycard, .recos-polycard.poly-card",
-  PDP_RECOMMENDATION_TITLE: ".poly-component__title",
-  PDP_RECOMMENDATION_PRICE_CURRENCY: ".poly-component__price .andes-money-amount__currency-symbol",
+  PDP_RECOMMENDATIONS_CONTAINER: ".ui-recommendations-carousel-wrapper-ref, .andes-carousel-snapped__wrapper, .dynamic-carousel",
+  PDP_RECOMMENDATION_ITEMS: ".andes-carousel-snapped__slide .recos-polycard, .recos-polycard.poly-card, .dynamic-carousel .andes-card",
+  PDP_RECOMMENDATION_TITLE: ".poly-component__title, .dynamic-carousel__title",
+  PDP_RECOMMENDATION_PRICE_CURRENCY: ".poly-component__price .andes-money-amount__currency-symbol, .dynamic-carousel__price span",
   PDP_RECOMMENDATION_PRICE_FRACTION: ".poly-component__price .andes-money-amount__fraction",
 
   // Button selectors
@@ -45,8 +45,24 @@ const SELECTORS = {
 } as const;
 
 const CURRENCY_MAPPING = {
-  uy: "UYU",
-  co: "COP",
+  ar: "ARS",  // Argentina - Peso argentino
+  bo: "BOB",  // Bolivia - Boliviano
+  br: "BRL",  // Brazil - Real
+  cl: "CLP",  // Chile - Peso chileno
+  co: "COP",  // Colombia - Peso colombiano
+  cr: "CRC",  // Costa Rica - Colón costarricense
+  do: "DOP",  // Dominican Republic - Peso dominicano
+  ec: "USD",  // Ecuador - Dólar estadounidense
+  sv: "USD",  // El Salvador - Dólar estadounidense
+  gt: "GTQ",  // Guatemala - Quetzal
+  hn: "HNL",  // Honduras - Lempira
+  mx: "MXN",  // Mexico - Peso mexicano
+  ni: "NIO",  // Nicaragua - Córdoba oro
+  pa: "PAB",  // Panama - Balboa
+  py: "PYG",  // Paraguay - Guaraní
+  pe: "PEN",  // Peru - Sol
+  uy: "UYU",  // Uruguay - Peso uruguayo
+  ve: "VES",  // Venezuela - Bolívar soberano
 } as const;
 
 const API_ENDPOINTS = {
@@ -290,6 +306,22 @@ function showNotification(message: string, type: "success" | "error" | "info" = 
 }
 
 /**
+ * Determines currency based on symbol and current country
+ */
+function determineCurrency(currencySymbol: string): string {
+  // Check if it's explicitly USD
+  if (currencySymbol.includes("US$") || currencySymbol.includes("U$S") || currencySymbol.includes("USD")) {
+    return "USD";
+  }
+  
+  // For any other symbol (including $, R$, etc.), use the country's local currency
+  const country = window.location.hostname.split(".").pop()?.toLowerCase() || "uy";
+  const localCurrency = CURRENCY_MAPPING[country as keyof typeof CURRENCY_MAPPING] || "UYU";
+  
+  return localCurrency;
+}
+
+/**
  * Calculates similarity score between two product names
  */
 function wordCoincidence(str1: string, str2: string): number {
@@ -376,13 +408,8 @@ function getMainProductPrice(): MLPrice {
       const priceText = priceElement.innerHTML.replace(/\./g, "").replace(/,/g, "");
       const price = parseFloat(priceText);
 
-      // Determine currency based on symbol
-      let currency = "UYU";
-      if (currencyText.includes("US$") || currencyText.includes("U$S")) {
-        currency = "USD";
-      } else if (currencyText === "$") {
-        currency = "UYU";
-      }
+      // Use the new centralized currency determination logic
+      const currency = determineCurrency(currencyText);
 
       return {
         currency: currency,
@@ -411,6 +438,28 @@ function getRecommendationProductPrice(item: Element): MLPrice {
   const defaultPrice: MLPrice = { currency: "UYU", price: 0 };
 
   try {
+    // First try the dynamic carousel format (price includes currency)
+    const dynamicPriceElement = item.querySelector(".dynamic-carousel__price span");
+    if (dynamicPriceElement) {
+      const fullPriceText = dynamicPriceElement.textContent?.trim() || "";
+      // Parse "US$ 729" or "$ 1,234" format
+      const priceMatch = fullPriceText.match(/(US\$|U\$S|\$|R\$|[A-Z]{3})\s*([0-9,]+(?:\.[0-9]+)?)/);
+      if (priceMatch) {
+        const currencySymbol = priceMatch[1];
+        const priceText = priceMatch[2].replace(/[,\.]/g, "");
+        const price = parseFloat(priceText);
+        
+        // Use the new centralized currency determination logic
+        const currency = determineCurrency(currencySymbol);
+
+        return {
+          currency: currency,
+          price: price,
+        };
+      }
+    }
+
+    // Fallback to standard format
     const currencyElement = item.querySelector(SELECTORS.PDP_RECOMMENDATION_PRICE_CURRENCY);
     const priceElement = item.querySelector(SELECTORS.PDP_RECOMMENDATION_PRICE_FRACTION);
 
@@ -419,13 +468,8 @@ function getRecommendationProductPrice(item: Element): MLPrice {
       const priceText = priceElement.innerHTML.replace(/\./g, "").replace(/,/g, "");
       const price = parseFloat(priceText);
 
-      // Determine currency based on symbol
-      let currency = "UYU";
-      if (currencyText.includes("US$") || currencyText.includes("U$S")) {
-        currency = "USD";
-      } else if (currencyText === "$") {
-        currency = "UYU";
-      }
+      // Use the new centralized currency determination logic
+      const currency = determineCurrency(currencyText);
 
       return {
         currency: currency,
@@ -502,6 +546,28 @@ function getMercadoLibrePrice(item: Element): MLPrice {
   const defaultPrice: MLPrice = { currency: "UYU", price: 0 };
 
   try {
+    // First try the dynamic carousel format (price includes currency)
+    const dynamicPriceElement = item.querySelector(".dynamic-carousel__price span");
+    if (dynamicPriceElement) {
+      const fullPriceText = dynamicPriceElement.textContent?.trim() || "";
+      // Parse "US$ 729" or "$ 1,234" format
+      const priceMatch = fullPriceText.match(/(US\$|U\$S|\$|R\$|[A-Z]{3})\s*([0-9,]+(?:\.[0-9]+)?)/);
+      if (priceMatch) {
+        const currencySymbol = priceMatch[1];
+        const priceText = priceMatch[2].replace(/[,\.]/g, "");
+        const price = parseFloat(priceText);
+        
+        // Use the new centralized currency determination logic
+        const currency = determineCurrency(currencySymbol);
+
+        return {
+          currency: currency,
+          price: price,
+        };
+      }
+    }
+
+    // Fallback to standard format
     const currencyElement = item.querySelector(`${SELECTORS.PRICE_CURRENCY_NEW}, ${SELECTORS.PRICE_CURRENCY_OLD}`);
     const priceElement = item.querySelector(`${SELECTORS.PRICE_FRACTION_NEW}, ${SELECTORS.PRICE_FRACTION_OLD}`);
 
@@ -510,13 +576,8 @@ function getMercadoLibrePrice(item: Element): MLPrice {
       const priceText = priceElement.innerHTML.replace(/\./g, "").replace(/,/g, "");
       const price = parseFloat(priceText);
 
-      // Determine currency based on symbol
-      let currency = "UYU";
-      if (currencyText.includes("US$") || currencyText.includes("U$S")) {
-        currency = "USD";
-      } else if (currencyText === "$") {
-        currency = "UYU";
-      }
+      // Use the new centralized currency determination logic
+      const currency = determineCurrency(currencyText);
 
       return {
         currency: currency,
@@ -531,7 +592,7 @@ function getMercadoLibrePrice(item: Element): MLPrice {
 }
 
 /**
- * Currency conversion function
+ * Currency conversion function - improved to handle all MercadoLibre currencies
  */
 function currencyConversion(item: Item, currencySymbol = "UYU"): CurrencyConversionResult {
   const price = item.price;
@@ -543,21 +604,47 @@ function currencyConversion(item: Item, currencySymbol = "UYU"): CurrencyConvers
     return { priceRaw: 0, priceAlt: "N/A", currencyAlt: "" };
   }
 
-  const usdCurr = currencySymbol === "UYU" ? currenciesData[currencySymbol]?.["USD"] : currencyData.rates?.[currencySymbol]?.to;
+  // Try to get USD conversion rate for the target currency
+  let usdRate: number | undefined;
+  
+  if (currenciesData[currencySymbol]?.["USD"]) {
+    usdRate = currenciesData[currencySymbol]["USD"];
+  } else if (currencyData.rates?.[currencySymbol]?.to) {
+    usdRate = currencyData.rates[currencySymbol].to;
+  }
 
-  if (!usdCurr) {
+  if (!usdRate) {
     return { priceRaw: price, priceAlt: price.toString(), currencyAlt: currency };
   }
 
   if (currency === "USD") {
-    priceAlt = price * usdCurr;
+    // Convert USD to target currency
+    priceAlt = price * usdRate;
     currencyAlt = currencySymbol;
   } else if (currency === currencySymbol) {
-    priceAlt = price / usdCurr;
+    // Convert target currency to USD
+    priceAlt = price / usdRate;
     currencyAlt = "USD";
   } else {
-    priceAlt = price;
-    currencyAlt = currency;
+    // For different currencies, try to convert through USD
+    let itemUsdRate: number | undefined;
+    
+    if (currenciesData[currency]?.["USD"]) {
+      itemUsdRate = currenciesData[currency]["USD"];
+    } else if (currencyData.rates?.[currency]?.to) {
+      itemUsdRate = currencyData.rates[currency].to;
+    }
+    
+    if (itemUsdRate) {
+      // Convert item currency to USD, then USD to target currency
+      const priceInUSD = price / itemUsdRate;
+      priceAlt = priceInUSD * usdRate;
+      currencyAlt = currencySymbol;
+    } else {
+      // Fallback: return original price
+      priceAlt = price;
+      currencyAlt = currency;
+    }
   }
 
   const currFormatter = new Intl.NumberFormat("es-UY", {
@@ -663,10 +750,20 @@ function createButtonClickHandler(
       if (mlPrice.price > 0) {
         if (mlPrice.currency === "USD") {
           maxPriceUSD = mlPrice.price;
-        } else if (mlPrice.currency === "UYU" && currenciesData && currenciesData["UYU"]?.["USD"]) {
-          // Convert UYU to USD
-          const usdRate = currenciesData["UYU"]["USD"];
-          maxPriceUSD = mlPrice.price / usdRate;
+        } else {
+          // For any other currency, try to convert to USD using available exchange rates
+          const country = window.location.hostname.split(".").pop()?.toLowerCase() || "uy";
+          const localCurrency = CURRENCY_MAPPING[country as keyof typeof CURRENCY_MAPPING] || "UYU";
+          
+          if (mlPrice.currency === localCurrency && currenciesData && currenciesData[localCurrency]?.["USD"]) {
+            // Convert local currency to USD
+            const usdRate = currenciesData[localCurrency]["USD"];
+            maxPriceUSD = mlPrice.price / usdRate;
+          } else if (currencyData?.rates?.[mlPrice.currency]?.to) {
+            // Fallback to general currency data
+            const usdRate = currencyData.rates[mlPrice.currency].to;
+            maxPriceUSD = mlPrice.price / usdRate;
+          }
         }
       }
 
@@ -702,7 +799,19 @@ function createButtonClickHandler(
         const currencySymbol = CURRENCY_MAPPING[country as keyof typeof CURRENCY_MAPPING] || "UYU";
         const { priceRaw } = currencyConversion(bestMatch, currencySymbol);
 
-        const isBetterPrice = mlPrice.currency === "USD" ? bestMatch.price < mlPrice.price : priceRaw < mlPrice.price;
+        // Improved price comparison logic that handles all currencies
+        let isBetterPrice = false;
+        
+        if (mlPrice.currency === "USD" && bestMatch.currency === "USD") {
+          // Both in USD - direct comparison
+          isBetterPrice = bestMatch.price < mlPrice.price;
+        } else if (mlPrice.currency === bestMatch.currency) {
+          // Same currency - direct comparison
+          isBetterPrice = bestMatch.price < mlPrice.price;
+        } else {
+          // Different currencies - use converted price
+          isBetterPrice = priceRaw < mlPrice.price;
+        }
 
         const className = isBetterPrice ? "btn_ml_success" : "btn_ml_danger";
         const icon = isBetterPrice ? "💰 " : "⚠️ ";
@@ -718,8 +827,10 @@ function createButtonClickHandler(
       button.onclick = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        const link = platform === "ebay" ? searchURL : bestMatch.link;
-        window.open(link, "_blank");
+        // Always use searchURL for both platforms to avoid about:blank issues
+        // For eBay: use searchURL directly
+        // For Amazon: use searchURL (don't use bestMatch.link which may be invalid)
+        window.open(searchURL, "_blank");
       };
     } catch (error) {
       console.error(`Error processing ${itemType} ${platform} request:`, error);
