@@ -9,8 +9,13 @@ console.log("%c⏰ TIMESTAMP:", "color: #28a745; font-weight: bold;", new Date()
 console.log("%c🔧 USER AGENT:", "color: #6c757d;", navigator.userAgent);
 
 // Test if we're on the right domain
-const isOnMercadoLibre = window.location.href.includes("mercadolibre.com");
+const isOnMercadoLibre = window.location.href.includes("mercadolibre.com") || window.location.href.includes("mercadolivre.com");
 console.log("%c🎯 ON MERCADOLIBRE:", isOnMercadoLibre ? "✅ YES" : "❌ NO", "color:", isOnMercadoLibre ? "#28a745" : "#dc3545", "font-weight: bold;");
+
+// Test URL patterns immediately
+const url = window.location.href;
+const isProductURL = /\/(p|ML[A-Z]-\d+)[\w-]*/.test(url) || url.includes('articulo.mercadolibre.') || url.includes('produto.mercadolivre.');
+console.log("%c🔍 PRODUCT URL PATTERN:", isProductURL ? "✅ MATCHES" : "❌ NO MATCH", "color:", isProductURL ? "#28a745" : "#dc3545", "font-weight: bold;");
 
 // Constants
 const SELECTORS = {
@@ -361,9 +366,9 @@ function wordCoincidence(str1: string, str2: string): number {
  * Checks if current page is a product detail page
  */
 function isProductDetailPage(): boolean {
-  // Check URL pattern (contains /p/ or /MLU)
+  // Check URL pattern - updated to match all MercadoLibre product URL formats
   const url = window.location.href;
-  const isProductURL = /\/(p|MLU)\/[\w-]+/.test(url);
+  const isProductURL = /\/(p|ML[A-Z]-\d+)[\w-]*/.test(url) || url.includes('articulo.mercadolibre.') || url.includes('produto.mercadolivre.');
 
   // Check for presence of product page elements
   const hasProductTitle = !!document.querySelector(SELECTORS.PDP_MAIN_TITLE);
@@ -997,16 +1002,34 @@ function processProductItem(item: Element, index: number): void {
  * Process the main product on a product detail page
  */
 function processMainProduct(): void {
+  console.log("🔍 processMainProduct() called");
+  
   // Check if extension is enabled
   if (!extensionConfig.enabled) {
+    console.log("⚠️ Extension disabled, skipping main product processing");
     return;
   }
 
+  console.log("🔍 Looking for price container with selector:", SELECTORS.PDP_MAIN_PRICE_CONTAINER);
+  
   // Check if we already processed the main product - look for any extension button container in the price area
   const priceContainer = document.querySelector(SELECTORS.PDP_MAIN_PRICE_CONTAINER);
   if (!priceContainer) {
+    console.log("❌ Price container not found with selector:", SELECTORS.PDP_MAIN_PRICE_CONTAINER);
+    
+    // Debug: try to find what price elements exist
+    const allPriceElements = document.querySelectorAll('[id*="price"], [class*="price"], [class*="pdp"]');
+    console.log("🔍 Found price-related elements:", allPriceElements.length);
+    allPriceElements.forEach((el, i) => {
+      if (i < 5) { // Only log first 5 to avoid spam
+        console.log(`  ${i+1}. ${el.tagName}#${el.id || 'no-id'}.${el.className || 'no-class'}`);
+      }
+    });
+    
     return;
   }
+
+  console.log("✅ Price container found:", priceContainer);
 
   // Check multiple ways to see if buttons already exist
   const existingContainer = document.querySelector(".btn_ml_app_main_product");
@@ -1020,23 +1043,43 @@ function processMainProduct(): void {
 
   // Get product name from title or URL
   let productName = getMainProductTitle();
+  console.log("🏷️ Product name from title:", productName);
+  
   if (!productName) {
     productName = getProductTitleFromURL();
+    console.log("🏷️ Product name from URL:", productName);
   }
 
   if (!productName) {
-    console.warn("Could not extract product name for main product");
+    console.warn("❌ Could not extract product name for main product");
+    
+    // Debug: check what title elements exist
+    const titleElements = document.querySelectorAll('h1, [class*="title"], [class*="pdp"]');
+    console.log("🔍 Found title-related elements:", titleElements.length);
+    titleElements.forEach((el, i) => {
+      if (i < 3) {
+        console.log(`  ${i+1}. ${el.tagName}.${el.className || 'no-class'}: "${el.textContent?.substring(0, 50) || 'no-text'}"`);
+      }
+    });
+    
     return;
   }
 
-  console.log("Processing main product:", productName);
+  console.log("✅ Processing main product:", productName);
 
   const buttonContainer = createMainProductButtonContainer();
 
   // Insert the button container after the price section
-  priceContainer.parentNode?.insertBefore(buttonContainer, priceContainer.nextSibling);
+  if (priceContainer.parentNode) {
+    priceContainer.parentNode.insertBefore(buttonContainer, priceContainer.nextSibling);
+    console.log("✅ Button container inserted after price section");
+  } else {
+    console.error("❌ Price container has no parent node");
+    return;
+  }
 
   setupMainProductButtonHandlers(buttonContainer, productName);
+  console.log("✅ Main product button handlers set up successfully");
 }
 
 /**
@@ -1198,6 +1241,9 @@ function setupCarouselObserver(): void {
  * Process all product items
  */
 function processAllItems(): void {
+  console.log("🚀 processAllItems() called");
+  console.log("🌐 Current URL:", window.location.href);
+  
   // Don't process if extension is disabled
   if (!extensionConfig.enabled) {
     console.log("⚠️ Extension is disabled, skipping item processing");
@@ -1210,7 +1256,10 @@ function processAllItems(): void {
   }
 
   // Check if we're on a product detail page
-  if (isProductDetailPage()) {
+  const isProductPage = isProductDetailPage();
+  console.log("🔍 Is product detail page:", isProductPage);
+  
+  if (isProductPage) {
     console.log("📄 Processing product detail page...");
 
     // Process the main product
@@ -1226,6 +1275,7 @@ function processAllItems(): void {
 
     // Process search result items
     const items = document.querySelectorAll(SELECTORS.PRODUCT_ITEMS);
+    console.log("🔍 Found", items.length, "product items");
     if (items.length === 0) return;
 
     items.forEach((item, index) => {

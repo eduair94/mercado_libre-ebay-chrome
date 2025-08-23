@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Honor X5b 4gb Ram 128gb 4g Lte 50mpx Dual Sim Libre Dimm - MercadoLibre</title>
+    <style>
+        body {
+            font-family: "Proxima Nova", -apple-system, "Helvetica Neue", Helvetica, Roboto, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #ebebeb;
+        }
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+        }
+        .ui-pdp-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin: 16px 0;
+        }
+        #price {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+        .andes-money-amount__currency-symbol {
+            font-size: 36px;
+            color: #333;
+            font-weight: 400;
+        }
+        .andes-money-amount__fraction {
+            font-size: 36px;
+            color: #333;
+            font-weight: 600;
+        }
+        .debug-info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 20px 0;
+        }
+        .debug-info h3 {
+            color: #1976d2;
+            margin-top: 0;
+        }
+        .console-log {
+            background: #f5f5f5;
+            border-left: 4px solid #4caf50;
+            padding: 12px;
+            margin: 8px 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="debug-info">
+            <h3>🧪 Extension Debug Test Page</h3>
+            <p><strong>Purpose:</strong> Simulate MercadoLibre product page structure to test extension debugging</p>
+            <p><strong>Current URL:</strong> <span id="current-url"></span></p>
+            <p><strong>Expected Behavior:</strong></p>
+            <ul>
+                <li>Extension should detect this as a product detail page</li>
+                <li>Extension should find the price container (#price)</li>
+                <li>Extension should extract product name from title</li>
+                <li>Extension should create and insert comparison buttons</li>
+            </ul>
+        </div>
+
+        <!-- Simulate the MercadoLibre product page structure -->
+        <div class="ui-pdp-container__col col-1 ui-pdp-container--column-right mt-24 pr-24 ui-pdp--relative">
+            <div class="ui-pdp--sticky-wrapper ui-pdp--sticky-wrapper-right" style="top: 16px;">
+                <div class="ui-pdp-container__row ui-pdp-component-list pr-16 pl-16">
+                    <div class="ui-pdp-container__col col-2 ui-vip-core-container--short-description ui-vip-core-container--column__right">
+                        
+                        <!-- Product Title -->
+                        <div class="ui-pdp-container__row ui-pdp-container__row--header" id="header">
+                            <div class="ui-pdp-header">
+                                <div class="ui-pdp-header__title-container">
+                                    <h1 class="ui-pdp-title">Honor X5b 4gb Ram 128gb 4g Lte 50mpx Dual Sim Libre Dimm</h1>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Price Section - This is where the extension should insert buttons -->
+                        <div class="ui-pdp-container__row ui-pdp-container__row--price" id="price">
+                            <div class="ui-pdp-price mt-16 ui-pdp-price--size-large">
+                                <div class="ui-pdp-price__main-container">
+                                    <div>
+                                        <div class="ui-pdp-price__second-line">
+                                            <span data-testid="price-part">
+                                                <span class="andes-money-amount ui-pdp-price__part andes-money-amount--cents-superscript andes-money-amount--compact" 
+                                                      style="font-size:36px" 
+                                                      role="img" 
+                                                      aria-label="115 dólares" 
+                                                      aria-roledescription="Monto">
+                                                    <span class="andes-money-amount__currency-symbol" aria-hidden="true">US$</span>
+                                                    <span class="andes-money-amount__fraction" aria-hidden="true">115</span>
+                                                </span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- This is where extension buttons should be inserted (after price section) -->
+
+                        <div class="debug-info">
+                            <h3>📊 Console Debug Output</h3>
+                            <p>Open browser developer tools and check the console for extension debug messages:</p>
+                            <div class="console-log">🚀 processAllItems() called</div>
+                            <div class="console-log">🌐 Current URL: [current page URL]</div>
+                            <div class="console-log">🔍 Is product detail page: true</div>
+                            <div class="console-log">📄 Processing product detail page...</div>
+                            <div class="console-log">🔍 processMainProduct() called</div>
+                            <div class="console-log">🔍 Looking for price container with selector: #price</div>
+                            <div class="console-log">✅ Price container found: [HTMLElement]</div>
+                            <div class="console-log">🏷️ Product name from title: Honor X5b 4gb Ram 128gb 4g Lte 50mpx Dual Sim Libre Dimm</div>
+                            <div class="console-log">✅ Processing main product: Honor X5b 4gb Ram 128gb 4g Lte 50mpx Dual Sim Libre Dimm</div>
+                            <div class="console-log">✅ Button container inserted after price section</div>
+                            <div class="console-log">✅ Main product button handlers set up successfully</div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Display current URL
+        document.getElementById('current-url').textContent = window.location.href;
+        
+        // Simulate the MercadoLibre domain structure for testing
+        console.log('🧪 Test page loaded');
+        console.log('🌐 Current URL:', window.location.href);
+        console.log('🔍 Testing extension product page detection...');
+        
+        // Check if extension elements appear
+        setTimeout(() => {
+            const buttons = document.querySelector('.btn_ml_app_container');
+            if (buttons) {
+                console.log('✅ Extension buttons found!', buttons);
+                
+                // Add success indicator
+                const successDiv = document.createElement('div');
+                successDiv.innerHTML = '<div style="background: #4caf50; color: white; padding: 12px; margin: 16px 0; border-radius: 8px;"><strong>✅ SUCCESS:</strong> Extension buttons were created and inserted!</div>';
+                document.querySelector('.debug-info').appendChild(successDiv);
+            } else {
+                console.log('❌ Extension buttons not found');
+                
+                // Add failure indicator
+                const failDiv = document.createElement('div');
+                failDiv.innerHTML = '<div style="background: #f44336; color: white; padding: 12px; margin: 16px 0; border-radius: 8px;"><strong>❌ FAILURE:</strong> Extension buttons were not created. Check console for debugging info.</div>';
+                document.querySelector('.debug-info').appendChild(failDiv);
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

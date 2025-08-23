@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test URL Pattern Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .url-test {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .result {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .result.pass {
+            background: #d4edda;
+            color: #155724;
+        }
+        .result.fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 MercadoLibre URL Pattern Detection Test</h1>
+    
+    <div class="test-container">
+        <h2>📋 URL Pattern Tests</h2>
+        <p>Testing various MercadoLibre URL patterns to verify product page detection:</p>
+        
+        <div id="test-results"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>🔧 Current Page Test</h2>
+        <p><strong>Current URL:</strong> <span id="current-url"></span></p>
+        <p><strong>Should be detected as product page:</strong> <span id="current-result"></span></p>
+    </div>
+
+    <div class="test-container">
+        <h2>📊 Manual Extension Tests</h2>
+        <p>If extension is loaded, check browser console for debug messages.</p>
+        <ul>
+            <li>Look for: 🚀 processAllItems() called</li>
+            <li>Look for: 🔍 Is product detail page: true/false</li>
+            <li>Look for: Extension debugging messages</li>
+        </ul>
+    </div>
+
+    <script>
+        // URL patterns to test (from the improved isProductDetailPage function)
+        const testUrls = [
+            // Original user example
+            'https://articulo.mercadolibre.com.uy/MLU-479780358-honor-x5b-4gb-ram-128gb-4g-lte-50mpx-dual-sim-libre-dimm',
+            
+            // Other product page patterns
+            'https://articulo.mercadolibre.com.ar/MLA-123456-product-name',
+            'https://producto.mercadolivre.com.br/MLB-123456-product-name',
+            'https://articulo.mercadolibre.com.mx/MLM-123456-product-name',
+            'https://mercadolibre.com.co/p/MLU123456',
+            'https://www.mercadolibre.cl/p/MLC123456',
+            
+            // Search/listing pages (should NOT match)
+            'https://listado.mercadolibre.com.ar/samsung-galaxy',
+            'https://mercadolibre.com.uy/buscar/celulares',
+            'https://www.mercadolibre.com.mx/categorias'
+        ];
+
+        function isProductDetailPage(url) {
+            // Replicate the improved logic from content script
+            const isProductURL = /\/(p|ML[A-Z]-\d+)[\w-]*/.test(url) || 
+                                  url.includes('articulo.mercadolibre.') || 
+                                  url.includes('produto.mercadolivre.');
+            
+            return isProductURL;
+        }
+
+        function runTests() {
+            const resultsContainer = document.getElementById('test-results');
+            
+            testUrls.forEach(url => {
+                const isProduct = isProductDetailPage(url);
+                const shouldBeProduct = url.includes('articulo.') || 
+                                       url.includes('produto.') || 
+                                       url.includes('/p/') || 
+                                       /ML[A-Z]-\d+/.test(url);
+                
+                const testDiv = document.createElement('div');
+                testDiv.className = 'url-test';
+                
+                const resultClass = (isProduct === shouldBeProduct) ? 'pass' : 'fail';
+                const resultText = isProduct ? 'PRODUCT PAGE' : 'NOT PRODUCT PAGE';
+                
+                testDiv.innerHTML = `
+                    ${url}
+                    <span class="result ${resultClass}">${resultText}</span>
+                `;
+                
+                resultsContainer.appendChild(testDiv);
+            });
+        }
+
+        // Test current URL
+        function testCurrentUrl() {
+            const currentUrl = window.location.href;
+            document.getElementById('current-url').textContent = currentUrl;
+            
+            const isProduct = isProductDetailPage(currentUrl);
+            const resultSpan = document.getElementById('current-result');
+            resultSpan.textContent = isProduct ? 'YES ✅' : 'NO ❌';
+            resultSpan.style.color = isProduct ? '#28a745' : '#dc3545';
+            resultSpan.style.fontWeight = 'bold';
+        }
+
+        // Run tests when page loads
+        window.addEventListener('load', () => {
+            runTests();
+            testCurrentUrl();
+            
+            console.log('🧪 URL Pattern Test Page Loaded');
+            console.log('🔍 Testing URL detection patterns...');
+        });
+    </script>
+</body>
+</html>
