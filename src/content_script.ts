@@ -140,6 +140,10 @@ const SELECTORS = {
   BUTTON_CONTAINER: ".btn_ml_app_container",
   EBAY_BUTTON: ".ebay_btn",
   AMAZON_BUTTON: ".amazon_btn",
+  REFRESH_BUTTON_EBAY: ".refresh_btn_ebay",
+  REFRESH_BUTTON_AMAZON: ".refresh_btn_amazon",
+  CURRENCY_TOGGLE_EBAY: ".currency_toggle_ebay",
+  CURRENCY_TOGGLE_AMAZON: ".currency_toggle_amazon",
 } as const;
 
 const CURRENCY_MAPPING = {
@@ -186,6 +190,9 @@ let currenciesData: any = null;
 let isInitialized = false;
 let checkInterval: number | null = null;
 let processingQueue = new Set<Element>();
+
+// Currency display state - tracks whether each button shows USD or local currency
+let currencyDisplayState = new Map<string, { showingLocal: boolean; originalPrice: number; originalCurrency: string; convertedPrice?: number; convertedCurrency?: string }>();
 
 // Configuration state
 let extensionConfig = {
@@ -411,6 +418,91 @@ function showNotification(message: string, type: "success" | "error" | "info" = 
       notification.remove();
     }, 300);
   }, 3000);
+}
+
+/**
+ * Generates a unique button ID for currency state tracking
+ */
+function generateButtonId(platform: string, productName: string, itemType: string): string {
+  return `${platform}_${itemType}_${btoa(productName).substring(0, 8)}`;
+}
+
+/**
+ * Creates currency toggle click handler
+ */
+function createCurrencyToggleHandler(platform: "ebay" | "amazon", productName: string, item: Element, button: HTMLButtonElement, itemType: "search" | "main" | "recommendation" = "search"): (event: Event) => void {
+  return (event: Event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const buttonId = generateButtonId(platform, productName, itemType);
+    const state = currencyDisplayState.get(buttonId);
+    
+    if (!state) {
+      console.warn("No currency state found for button:", buttonId);
+      return;
+    }
+
+    const country = window.location.hostname.split(".").pop()?.toLowerCase() || "uy";
+    const localCurrency = CURRENCY_MAPPING[country as keyof typeof CURRENCY_MAPPING] || "UYU";
+    
+    const btnText = button.querySelector('.btn-text');
+    const toggleBtn = button.querySelector(`.currency_toggle_${platform}`) as HTMLButtonElement;
+    
+    if (!btnText || !toggleBtn) {
+      console.warn("Button elements not found for currency toggle");
+      return;
+    }
+
+    if (state.showingLocal) {
+      // Switch back to USD
+      btnText.innerHTML = `US$ ${state.originalPrice}`;
+      toggleBtn.textContent = localCurrency;
+      toggleBtn.title = `Mostrar en ${localCurrency}`;
+      state.showingLocal = false;
+    } else {
+      // Switch to local currency
+      if (!state.convertedPrice || !state.convertedCurrency) {
+        // Calculate conversion if not already done
+        const mockItem: Item = {
+          price: state.originalPrice,
+          currency: state.originalCurrency,
+          name: productName,
+          image: null,
+          location: "",
+          originalPrice: { currency: state.originalCurrency, price: state.originalPrice },
+          shippingCost: { currency: "USD", price: 0 },
+          seller: undefined,
+          status: "",
+          watchCount: 0,
+          soldCount: 0,
+          bidCount: 0,
+          link: null
+        };
+        
+        const conversion = currencyConversion(mockItem, localCurrency);
+        state.convertedPrice = conversion.priceRaw;
+        state.convertedCurrency = conversion.currencyAlt;
+      }
+      
+      // Show converted price
+      let referencePrice = 0;
+      if (itemType === "main") {
+        referencePrice = getMainProductPrice()?.price || 0;
+      } else if (itemType === "recommendation") {
+        referencePrice = getRecommendationProductPrice(item)?.price || 0;
+      } else {
+        referencePrice = getMercadoLibrePrice(item)?.price || 0;
+      }
+      
+      btnText.innerHTML = `${state.convertedCurrency} ${Math.round(state.convertedPrice!).toLocaleString()}`;
+      toggleBtn.textContent = "USD";
+      toggleBtn.title = "Mostrar en USD";
+      state.showingLocal = true;
+    }
+
+    currencyDisplayState.set(buttonId, state);
+  };
 }
 
 /**
@@ -1001,14 +1093,79 @@ function createButtonClickHandler(platform: "ebay" | "amazon", productName: stri
         }
 
         const className = isBetterPrice ? "btn_ml_success" : "btn_ml_danger";
-        const icon = isBetterPrice ? "💰 " : "⚠️ ";
 
         // Add the appropriate CSS classes based on item type
         const baseClasses = itemType === "main" ? "btn_ml_app btn_ml_app_main" : "btn_ml_app";
         button.className = `${baseClasses} ${className}`;
-        button.innerHTML = `<div style="color: inherit !important; text-decoration: none !important;">
-          ${icon}US$ ${bestMatch.price}
-        </div>`;
+        
+        // Store currency state for this button
+        const buttonId = generateButtonId(platform, productName, itemType);
+        const localCurrency = CURRENCY_MAPPING[country as keyof typeof CURRENCY_MAPPING] || "UYU";
+        
+        currencyDisplayState.set(buttonId, {
+          showingLocal: false,
+          originalPrice: bestMatch.price,
+          originalCurrency: bestMatch.currency
+        });
+        
+        // Update button content and show refresh and currency toggle buttons
+        const btnText = button.querySelector('.btn-text');
+        if (btnText) {
+          btnText.innerHTML = `US$ ${bestMatch.price}`;
+        } else {
+          button.innerHTML = `
+            <span class="btn-text" style="color: inherit !important; text-decoration: none !important;">
+              US$ ${bestMatch.price}
+            </span>
+            <button class="currency_toggle_${platform}" style="
+              position: absolute; 
+              right: ${itemType === "main" ? "26px" : "22px"}; 
+              top: 50%; 
+              transform: translateY(-50%); 
+              width: ${itemType === "main" ? "18px" : "16px"}; 
+              height: ${itemType === "main" ? "18px" : "16px"}; 
+              font-size: ${itemType === "main" ? "8px" : "7px"}; 
+              background: rgba(255,255,255,0.9); 
+              border: ${itemType === "main" ? "1px solid #ddd" : "none"}; 
+              border-radius: 3px; 
+              cursor: pointer;
+              display: block;
+              padding: 0;
+              line-height: 1;
+              font-weight: bold;
+            " title="Mostrar en ${localCurrency}">${localCurrency}</button>
+            <button class="refresh_btn_${platform}" style="
+              position: absolute; 
+              right: ${itemType === "main" ? "4px" : "2px"}; 
+              top: 50%; 
+              transform: translateY(-50%); 
+              width: ${itemType === "main" ? "18px" : "16px"}; 
+              height: ${itemType === "main" ? "18px" : "16px"}; 
+              font-size: 10px; 
+              background: rgba(255,255,255,0.9); 
+              border: ${itemType === "main" ? "1px solid #ddd" : "none"}; 
+              border-radius: 50%; 
+              cursor: pointer;
+              display: block;
+              padding: 0;
+              line-height: 1;
+            " title="Actualizar ${platform === 'ebay' ? 'eBay' : 'Amazon'}">🔄</button>
+          `;
+        }
+        
+        // Show the refresh button for this platform
+        const refreshBtn = button.querySelector(`.refresh_btn_${platform}`) as HTMLButtonElement;
+        if (refreshBtn) {
+          refreshBtn.style.display = "block";
+          refreshBtn.onclick = createIndividualRefreshHandler(platform, productName, item, button, itemType);
+        }
+
+        // Show and set up the currency toggle button for this platform
+        const currencyToggleBtn = button.querySelector(`.currency_toggle_${platform}`) as HTMLButtonElement;
+        if (currencyToggleBtn) {
+          currencyToggleBtn.style.display = "block";
+          currencyToggleBtn.onclick = createCurrencyToggleHandler(platform, productName, item, button, itemType);
+        }
       }
 
       button.onclick = (e) => {
@@ -1029,6 +1186,89 @@ function createButtonClickHandler(platform: "ebay" | "amazon", productName: stri
 }
 
 /**
+ * Creates individual refresh button click handler for a specific platform
+ */
+function createIndividualRefreshHandler(platform: "ebay" | "amazon", productName: string, item: Element, button: HTMLButtonElement, itemType: "search" | "main" | "recommendation" = "search"): (event: Event) => Promise<void> {
+  return async (event: Event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const refreshBtn = event.target as HTMLButtonElement;
+
+    // Show refresh animation
+    refreshBtn.textContent = "🔄";
+    refreshBtn.disabled = true;
+    refreshBtn.style.animation = "spin 1s linear infinite";
+
+    // Add the spin animation CSS if it doesn't exist
+    if (!document.querySelector('#refresh-spin-animation')) {
+      const style = document.createElement('style');
+      style.id = 'refresh-spin-animation';
+      style.textContent = `
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    try {
+      // Reset this specific button state
+      button.disabled = false;
+      
+      // Reset button appearance and text
+      const btnText = button.querySelector('.btn-text');
+      if (btnText) {
+        btnText.textContent = platform === "ebay" ? "🛒 eBay" : "📦 Amazon";
+      } else {
+        button.textContent = platform === "ebay" ? "🛒 eBay" : "📦 Amazon";
+      }
+      
+      button.className = button.className.replace(/btn_ml_(success|danger)/g, '').trim();
+      if (itemType === "main") {
+        button.className = `${platform}_btn btn_ml_app btn_ml_app_main`;
+      } else {
+        button.className = `${platform}_btn btn_ml_app`;
+      }
+
+      // Hide the refresh and currency toggle buttons again until new search completes
+      refreshBtn.style.display = "none";
+      
+      const currencyToggleBtn = button.querySelector(`.currency_toggle_${platform}`) as HTMLButtonElement;
+      if (currencyToggleBtn) {
+        currencyToggleBtn.style.display = "none";
+        // Reset currency state for this button
+        const buttonId = generateButtonId(platform, productName, itemType);
+        currencyDisplayState.delete(buttonId);
+      }
+
+      // Re-setup button handler with fresh data
+      button.onclick = createButtonClickHandler(platform, productName, item, button, itemType);
+
+      console.log(`🔄 Refreshed ${platform} button for ${itemType} item: ${productName}`);
+
+      // Show success feedback briefly
+      refreshBtn.textContent = "✅";
+      refreshBtn.style.animation = "";
+      setTimeout(() => {
+        refreshBtn.style.display = "none";
+      }, 800);
+
+    } catch (error) {
+      console.error(`Error refreshing ${platform} button for ${itemType}:`, error);
+      refreshBtn.textContent = "❌";
+      refreshBtn.style.animation = "";
+      setTimeout(() => {
+        refreshBtn.style.display = "none";
+      }, 1500);
+    } finally {
+      refreshBtn.disabled = false;
+    }
+  };
+}
+
+/**
  * Creates button container
  */
 function createButtonContainer(): HTMLElement {
@@ -1040,15 +1280,85 @@ function createButtonContainer(): HTMLElement {
 
   const fontSize = sizeMap[extensionConfig.textSize as keyof typeof sizeMap] || "14px";
   const transition = extensionConfig.animations ? "all 0.3s ease" : "none";
+  
+  // Get the local currency for this country
+  const country = window.location.hostname.split(".").pop()?.toLowerCase() || "uy";
+  const localCurrency = CURRENCY_MAPPING[country as keyof typeof CURRENCY_MAPPING] || "UYU";
 
   const element = document.createElement("div");
   element.innerHTML = `
     <div class="btn_ml_app_container" style="font-size: ${fontSize}; transition: ${transition};">
-      <button style="font-size: ${fontSize}" class="ebay_btn btn_ml_app">
-        <span>🛒 eBay</span>
+      <button style="font-size: ${fontSize}; position: relative;" class="ebay_btn btn_ml_app">
+        <span class="btn-text">🛒 eBay</span>
+        <button class="currency_toggle_ebay" style="
+          position: absolute; 
+          right: 22px; 
+          top: 50%; 
+          transform: translateY(-50%); 
+          width: 16px; 
+          height: 16px; 
+          font-size: 7px; 
+          background: rgba(255,255,255,0.8); 
+          border: none; 
+          border-radius: 3px; 
+          cursor: pointer;
+          display: none;
+          padding: 0;
+          line-height: 1;
+          font-weight: bold;
+        " title="Cambiar moneda">${localCurrency}</button>
+        <button class="refresh_btn_ebay" style="
+          position: absolute; 
+          right: 2px; 
+          top: 50%; 
+          transform: translateY(-50%); 
+          width: 16px; 
+          height: 16px; 
+          font-size: 10px; 
+          background: rgba(255,255,255,0.8); 
+          border: none; 
+          border-radius: 50%; 
+          cursor: pointer;
+          display: none;
+          padding: 0;
+          line-height: 1;
+        " title="Actualizar eBay">🔄</button>
       </button>
-      <button style="font-size: ${fontSize}" class="amazon_btn btn_ml_app">
-        <span>📦 Amazon</span>
+      <button style="font-size: ${fontSize}; position: relative;" class="amazon_btn btn_ml_app">
+        <span class="btn-text">📦 Amazon</span>
+        <button class="currency_toggle_amazon" style="
+          position: absolute; 
+          right: 22px; 
+          top: 50%; 
+          transform: translateY(-50%); 
+          width: 16px; 
+          height: 16px; 
+          font-size: 7px; 
+          background: rgba(255,255,255,0.8); 
+          border: none; 
+          border-radius: 3px; 
+          cursor: pointer;
+          display: none;
+          padding: 0;
+          line-height: 1;
+          font-weight: bold;
+        " title="Cambiar moneda">${localCurrency}</button>
+        <button class="refresh_btn_amazon" style="
+          position: absolute; 
+          right: 2px; 
+          top: 50%; 
+          transform: translateY(-50%); 
+          width: 16px; 
+          height: 16px; 
+          font-size: 10px; 
+          background: rgba(255,255,255,0.8); 
+          border: none; 
+          border-radius: 50%; 
+          cursor: pointer;
+          display: none;
+          padding: 0;
+          line-height: 1;
+        " title="Actualizar Amazon">🔄</button>
       </button>
     </div>
   `;
@@ -1083,6 +1393,10 @@ function createMainProductButtonContainer(): HTMLElement {
 
   const fontSize = sizeMap[extensionConfig.textSize as keyof typeof sizeMap] || "14px";
   const transition = extensionConfig.animations ? "all 0.3s ease" : "none";
+  
+  // Get the local currency for this country
+  const country = window.location.hostname.split(".").pop()?.toLowerCase() || "uy";
+  const localCurrency = CURRENCY_MAPPING[country as keyof typeof CURRENCY_MAPPING] || "UYU";
 
   const element = document.createElement("div");
   element.innerHTML = `
@@ -1104,25 +1418,95 @@ function createMainProductButtonContainer(): HTMLElement {
           font-size: ${fontSize}; 
           flex: 1; 
           padding: 8px 12px; 
+          padding-right: 48px;
           border-radius: 6px;
           border: 1px solid #ddd;
           background: white;
           cursor: pointer;
           transition: ${transition};
+          position: relative;
         " class="ebay_btn btn_ml_app btn_ml_app_main">
-          <span>🛒 eBay</span>
+          <span class="btn-text">🛒 eBay</span>
+          <button class="currency_toggle_ebay" style="
+            position: absolute; 
+            right: 26px; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            width: 18px; 
+            height: 18px; 
+            font-size: 8px; 
+            background: rgba(255,255,255,0.9); 
+            border: 1px solid #ddd; 
+            border-radius: 3px; 
+            cursor: pointer;
+            display: none;
+            padding: 0;
+            line-height: 1;
+            font-weight: bold;
+          " title="Cambiar moneda">${localCurrency}</button>
+          <button class="refresh_btn_ebay" style="
+            position: absolute; 
+            right: 4px; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            width: 18px; 
+            height: 18px; 
+            font-size: 10px; 
+            background: rgba(255,255,255,0.9); 
+            border: 1px solid #ddd; 
+            border-radius: 50%; 
+            cursor: pointer;
+            display: none;
+            padding: 0;
+            line-height: 1;
+          " title="Actualizar eBay">🔄</button>
         </button>
         <button style="
           font-size: ${fontSize}; 
           flex: 1; 
           padding: 8px 12px; 
+          padding-right: 48px;
           border-radius: 6px;
           border: 1px solid #ddd;
           background: white;
           cursor: pointer;
           transition: ${transition};
+          position: relative;
         " class="amazon_btn btn_ml_app btn_ml_app_main">
-          <span>📦 Amazon</span>
+          <span class="btn-text">📦 Amazon</span>
+          <button class="currency_toggle_amazon" style="
+            position: absolute; 
+            right: 26px; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            width: 18px; 
+            height: 18px; 
+            font-size: 8px; 
+            background: rgba(255,255,255,0.9); 
+            border: 1px solid #ddd; 
+            border-radius: 3px; 
+            cursor: pointer;
+            display: none;
+            padding: 0;
+            line-height: 1;
+            font-weight: bold;
+          " title="Cambiar moneda">${localCurrency}</button>
+          <button class="refresh_btn_amazon" style="
+            position: absolute; 
+            right: 4px; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            width: 18px; 
+            height: 18px; 
+            font-size: 10px; 
+            background: rgba(255,255,255,0.9); 
+            border: 1px solid #ddd; 
+            border-radius: 50%; 
+            cursor: pointer;
+            display: none;
+            padding: 0;
+            line-height: 1;
+          " title="Actualizar Amazon">🔄</button>
         </button>
       </div>
     </div>
