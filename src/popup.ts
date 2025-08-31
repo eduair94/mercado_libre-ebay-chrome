@@ -4,6 +4,7 @@ interface ExtensionSettings {
   animations: boolean;
   notifications: boolean;
   language: "es" | "pt";
+  geminiApiKey: string;
 }
 
 interface ChromeMessages {
@@ -26,6 +27,7 @@ class PopupController {
     animations: true,
     notifications: true,
     language: "es",
+    geminiApiKey: "",
   };
 
   private messages: ChromeMessages = {};
@@ -47,6 +49,12 @@ class PopupController {
       animationsDescription: "Mostrar animaciones en las comparaciones",
       notificationsLabel: "Notificaciones",
       notificationsDescription: "Mostrar notificaciones de precios encontrados",
+      geminiApiKeyLabel: "Clave API de Gemini",
+      geminiApiKeyDescription: "Mejora las búsquedas con IA de Google (opcional)",
+      geminiApiKeyPlaceholder: "Ingresa tu clave API de Gemini...",
+      geminiApiKeyValid: "API válida",
+      geminiApiKeyInvalid: "API inválida",
+      geminiApiKeyEmpty: "Sin configurar",
       saveButton: "Guardar Configuración",
       resetButton: "Restablecer",
       aboutTitle: "Acerca de",
@@ -73,6 +81,12 @@ class PopupController {
       animationsDescription: "Mostrar animações nas comparações",
       notificationsLabel: "Notificações",
       notificationsDescription: "Mostrar notificações de preços encontrados",
+      geminiApiKeyLabel: "Chave API do Gemini",
+      geminiApiKeyDescription: "Melhora as buscas com IA do Google (opcional)",
+      geminiApiKeyPlaceholder: "Digite sua chave API do Gemini...",
+      geminiApiKeyValid: "API válida",
+      geminiApiKeyInvalid: "API inválida",
+      geminiApiKeyEmpty: "Não configurado",
       saveButton: "Salvar Configuração",
       resetButton: "Redefinir",
       aboutTitle: "Sobre",
@@ -310,6 +324,40 @@ class PopupController {
     resetBtn?.addEventListener("click", () => {
       this.resetToDefaults();
     });
+
+    // Gemini API Key handlers
+    const geminiApiKey = document.getElementById("geminiApiKey") as HTMLInputElement;
+    const toggleApiKeyVisibility = document.getElementById("toggleApiKeyVisibility");
+    const testApiKey = document.getElementById("testApiKey") as HTMLButtonElement;
+
+    // API Key input change handler
+    geminiApiKey?.addEventListener("input", (e) => {
+      const target = e.target as HTMLInputElement;
+      this.settings.geminiApiKey = target.value.trim();
+      this.updateApiKeyStatus();
+      this.saveSettings();
+    });
+
+    // Toggle password visibility
+    toggleApiKeyVisibility?.addEventListener("click", () => {
+      const eyeIcon = document.getElementById("eyeIcon");
+      const eyeOffIcon = document.getElementById("eyeOffIcon");
+      
+      if (geminiApiKey.type === "password") {
+        geminiApiKey.type = "text";
+        eyeIcon?.classList.add("hidden");
+        eyeOffIcon?.classList.remove("hidden");
+      } else {
+        geminiApiKey.type = "password";
+        eyeIcon?.classList.remove("hidden");
+        eyeOffIcon?.classList.add("hidden");
+      }
+    });
+
+    // Test API Key button
+    testApiKey?.addEventListener("click", async () => {
+      await this.testGeminiApiKey();
+    });
   }
 
   public updateUI(): void {
@@ -317,6 +365,8 @@ class PopupController {
     this.updateTextSizeButtons();
     this.updateToggles();
     this.updateLanguageSelect();
+    this.updateApiKeyInput();
+    this.updateApiKeyStatus();
   }
 
   private updateStatusText(): void {
@@ -362,6 +412,79 @@ class PopupController {
     const languageSelect = document.getElementById("languageSelect") as HTMLSelectElement;
     if (languageSelect) {
       languageSelect.value = this.settings.language;
+    }
+  }
+
+  private updateApiKeyInput(): void {
+    const apiKeyInput = document.getElementById("geminiApiKey") as HTMLInputElement;
+    if (apiKeyInput) {
+      apiKeyInput.value = this.settings.geminiApiKey;
+    }
+  }
+
+  private updateApiKeyStatus(): void {
+    const apiKeyInput = document.getElementById("geminiApiKey") as HTMLInputElement;
+    const apiKeyStatus = document.getElementById("apiKeyStatus");
+    const testApiKeyBtn = document.getElementById("testApiKey") as HTMLButtonElement;
+
+    if (!apiKeyInput || !apiKeyStatus || !testApiKeyBtn) return;
+
+    const apiKey = this.settings.geminiApiKey.trim();
+    
+    if (!apiKey) {
+      apiKeyStatus.textContent = this.getTranslation("geminiApiKeyEmpty");
+      apiKeyStatus.className = "px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium";
+      testApiKeyBtn.disabled = true;
+    } else if (apiKey.startsWith("AIza") && apiKey.length > 20) {
+      apiKeyStatus.textContent = this.getTranslation("geminiApiKeyValid");
+      apiKeyStatus.className = "px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium";
+      testApiKeyBtn.disabled = false;
+    } else {
+      apiKeyStatus.textContent = this.getTranslation("geminiApiKeyInvalid");
+      apiKeyStatus.className = "px-2 py-1 bg-red-100 text-red-600 text-xs rounded-full font-medium";
+      testApiKeyBtn.disabled = true;
+    }
+  }
+
+  private async testGeminiApiKey(): Promise<void> {
+    const testApiKeyBtn = document.getElementById("testApiKey") as HTMLButtonElement;
+    const apiKeyStatus = document.getElementById("apiKeyStatus");
+    
+    if (!testApiKeyBtn || !apiKeyStatus) return;
+
+    try {
+      testApiKeyBtn.disabled = true;
+      testApiKeyBtn.textContent = "Probando...";
+      
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${this.settings.geminiApiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: "Test connection"
+            }]
+          }]
+        })
+      });
+
+      if (response.ok) {
+        apiKeyStatus.textContent = this.getTranslation("geminiApiKeyValid");
+        apiKeyStatus.className = "px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium";
+        this.showToast("API de Gemini funcionando correctamente", "success");
+      } else {
+        throw new Error(`HTTP ${response.status}`);
+      }
+    } catch (error) {
+      console.error("Gemini API test failed:", error);
+      apiKeyStatus.textContent = this.getTranslation("geminiApiKeyInvalid");
+      apiKeyStatus.className = "px-2 py-1 bg-red-100 text-red-600 text-xs rounded-full font-medium";
+      this.showToast("Error: Clave API de Gemini inválida", "error");
+    } finally {
+      testApiKeyBtn.disabled = this.settings.geminiApiKey.trim() === "";
+      testApiKeyBtn.textContent = "Probar API";
     }
   }
 
@@ -418,6 +541,7 @@ class PopupController {
       animations: true,
       notifications: true,
       language: "es",
+      geminiApiKey: "",
     };
 
     await this.loadLanguage();

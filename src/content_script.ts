@@ -14,7 +14,7 @@ console.log("%c🎯 ON MERCADOLIBRE:", isOnMercadoLibre ? "✅ YES" : "❌ NO", 
 
 // Test URL patterns immediately
 const url = window.location.href;
-const isProductURL = /\/(p|ML[A-Z]-\d+)[\w-]*/.test(url) || url.includes('articulo.mercadolibre.') || url.includes('produto.mercadolivre.');
+const isProductURL = /\/(p|ML[A-Z]-\d+)[\w-]*/.test(url) || url.includes("articulo.mercadolibre.") || url.includes("produto.mercadolivre.");
 console.log("%c🔍 PRODUCT URL PATTERN:", isProductURL ? "✅ MATCHES" : "❌ NO MATCH", "color:", isProductURL ? "#28a745" : "#dc3545", "font-weight: bold;");
 
 // Constants
@@ -50,24 +50,24 @@ const SELECTORS = {
 } as const;
 
 const CURRENCY_MAPPING = {
-  ar: "ARS",  // Argentina - Peso argentino
-  bo: "BOB",  // Bolivia - Boliviano
-  br: "BRL",  // Brazil - Real
-  cl: "CLP",  // Chile - Peso chileno
-  co: "COP",  // Colombia - Peso colombiano
-  cr: "CRC",  // Costa Rica - Colón costarricense
-  do: "DOP",  // Dominican Republic - Peso dominicano
-  ec: "USD",  // Ecuador - Dólar estadounidense
-  sv: "USD",  // El Salvador - Dólar estadounidense
-  gt: "GTQ",  // Guatemala - Quetzal
-  hn: "HNL",  // Honduras - Lempira
-  mx: "MXN",  // Mexico - Peso mexicano
-  ni: "NIO",  // Nicaragua - Córdoba oro
-  pa: "PAB",  // Panama - Balboa
-  py: "PYG",  // Paraguay - Guaraní
-  pe: "PEN",  // Peru - Sol
-  uy: "UYU",  // Uruguay - Peso uruguayo
-  ve: "VES",  // Venezuela - Bolívar soberano
+  ar: "ARS", // Argentina - Peso argentino
+  bo: "BOB", // Bolivia - Boliviano
+  br: "BRL", // Brazil - Real
+  cl: "CLP", // Chile - Peso chileno
+  co: "COP", // Colombia - Peso colombiano
+  cr: "CRC", // Costa Rica - Colón costarricense
+  do: "DOP", // Dominican Republic - Peso dominicano
+  ec: "USD", // Ecuador - Dólar estadounidense
+  sv: "USD", // El Salvador - Dólar estadounidense
+  gt: "GTQ", // Guatemala - Quetzal
+  hn: "HNL", // Honduras - Lempira
+  mx: "MXN", // Mexico - Peso mexicano
+  ni: "NIO", // Nicaragua - Córdoba oro
+  pa: "PAB", // Panama - Balboa
+  py: "PYG", // Paraguay - Guaraní
+  pe: "PEN", // Peru - Sol
+  uy: "UYU", // Uruguay - Peso uruguayo
+  ve: "VES", // Venezuela - Bolívar soberano
 } as const;
 
 const API_ENDPOINTS = {
@@ -101,6 +101,7 @@ let extensionConfig = {
   animations: true,
   notifications: true,
   language: "es",
+  geminiApiKey: "",
 };
 
 console.log("🚀 MercadoLibre Extension - Content Script Loaded!");
@@ -318,11 +319,11 @@ function determineCurrency(currencySymbol: string): string {
   if (currencySymbol.includes("US$") || currencySymbol.includes("U$S") || currencySymbol.includes("USD")) {
     return "USD";
   }
-  
+
   // For any other symbol (including $, R$, etc.), use the country's local currency
   const country = window.location.hostname.split(".").pop()?.toLowerCase() || "uy";
   const localCurrency = CURRENCY_MAPPING[country as keyof typeof CURRENCY_MAPPING] || "UYU";
-  
+
   return localCurrency;
 }
 
@@ -368,7 +369,7 @@ function wordCoincidence(str1: string, str2: string): number {
 function isProductDetailPage(): boolean {
   // Check URL pattern - updated to match all MercadoLibre product URL formats
   const url = window.location.href;
-  const isProductURL = /\/(p|ML[A-Z]-\d+)[\w-]*/.test(url) || url.includes('articulo.mercadolibre.') || url.includes('produto.mercadolivre.');
+  const isProductURL = /\/(p|ML[A-Z]-\d+)[\w-]*/.test(url) || url.includes("articulo.mercadolibre.") || url.includes("produto.mercadolivre.");
 
   // Check for presence of product page elements
   const hasProductTitle = !!document.querySelector(SELECTORS.PDP_MAIN_TITLE);
@@ -453,7 +454,7 @@ function getRecommendationProductPrice(item: Element): MLPrice {
         const currencySymbol = priceMatch[1];
         const priceText = priceMatch[2].replace(/[,\.]/g, "");
         const price = parseFloat(priceText);
-        
+
         // Use the new centralized currency determination logic
         const currency = determineCurrency(currencySymbol);
 
@@ -510,7 +511,67 @@ function findMostSimilarProduct(target: string, products: Item[]): Item | null {
   // }
 
   // return bestMatch || products[0];
+  console.log("Products", products);
   return products.find((el) => el.price) || products[0];
+}
+
+/**
+ * Optimizes search query using Gemini AI
+ */
+async function optimizeSearchQueryWithGemini(productName: string, geminiApiKey?: string): Promise<string> {
+  if (!geminiApiKey || !productName) {
+    return optimizeSearchQuery(productName);
+  }
+
+  try {
+    console.log("🤖 [GEMINI] Optimizing search query with AI:", productName);
+
+    const prompt = [
+      `Given this product name from MercadoLibre: "${productName}"`,
+      `Please create an optimized search query for eBay and Amazon that will find the same or similar product. The optimized query should:`,
+      `1. Remove brand names if they're too specific for the marketplace`,
+      `2. Keep essential product features and characteristics`,
+      `3. Use English terms when appropriate for international marketplaces`,
+      `4. Be concise but descriptive (max 10 words)`,
+      `5. Remove filler words like "para", "de", "con", etc.`,
+      `Only respond with the optimized search query, nothing else.`,
+    ].join("\n");
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: prompt,
+              },
+            ],
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const optimizedQuery = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+    if (optimizedQuery && optimizedQuery.length > 0) {
+      console.log("🤖 [GEMINI] AI optimized query:", optimizedQuery);
+      return optimizedQuery;
+    } else {
+      throw new Error("Empty response from Gemini");
+    }
+  } catch (error) {
+    console.warn("🤖 [GEMINI] AI optimization failed, using fallback:", error);
+    return optimizeSearchQuery(productName);
+  }
 }
 
 /**
@@ -561,7 +622,7 @@ function getMercadoLibrePrice(item: Element): MLPrice {
         const currencySymbol = priceMatch[1];
         const priceText = priceMatch[2].replace(/[,\.]/g, "");
         const price = parseFloat(priceText);
-        
+
         // Use the new centralized currency determination logic
         const currency = determineCurrency(currencySymbol);
 
@@ -611,7 +672,7 @@ function currencyConversion(item: Item, currencySymbol = "UYU"): CurrencyConvers
 
   // Try to get USD conversion rate for the target currency
   let usdRate: number | undefined;
-  
+
   if (currenciesData[currencySymbol]?.["USD"]) {
     usdRate = currenciesData[currencySymbol]["USD"];
   } else if (currencyData.rates?.[currencySymbol]?.to) {
@@ -633,13 +694,13 @@ function currencyConversion(item: Item, currencySymbol = "UYU"): CurrencyConvers
   } else {
     // For different currencies, try to convert through USD
     let itemUsdRate: number | undefined;
-    
+
     if (currenciesData[currency]?.["USD"]) {
       itemUsdRate = currenciesData[currency]["USD"];
     } else if (currencyData.rates?.[currency]?.to) {
       itemUsdRate = currencyData.rates[currency].to;
     }
-    
+
     if (itemUsdRate) {
       // Convert item currency to USD, then USD to target currency
       const priceInUSD = price / itemUsdRate;
@@ -667,8 +728,8 @@ function currencyConversion(item: Item, currencySymbol = "UYU"): CurrencyConvers
 /**
  * Creates search URL for platform
  */
-function createSearchURL(platform: "ebay" | "amazon", query: string, maxPrice?: number): string {
-  const optimizedQuery = optimizeSearchQuery(query);
+async function createSearchURL(platform: "ebay" | "amazon", query: string, maxPrice?: number): Promise<string> {
+  const optimizedQuery = await optimizeSearchQueryWithGemini(query, extensionConfig.geminiApiKey);
 
   if (platform === "ebay") {
     const searchParams: Record<string, string> = {
@@ -719,13 +780,7 @@ function sendMessagePromise(message: any): Promise<any> {
 /**
  * Generic button click handler that works for search results, main product, and recommendations
  */
-function createButtonClickHandler(
-  platform: "ebay" | "amazon", 
-  productName: string, 
-  item: Element, 
-  button: HTMLButtonElement, 
-  itemType: "search" | "main" | "recommendation" = "search"
-) {
+function createButtonClickHandler(platform: "ebay" | "amazon", productName: string, item: Element, button: HTMLButtonElement, itemType: "search" | "main" | "recommendation" = "search") {
   return async (event: Event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -759,7 +814,7 @@ function createButtonClickHandler(
           // For any other currency, try to convert to USD using available exchange rates
           const country = window.location.hostname.split(".").pop()?.toLowerCase() || "uy";
           const localCurrency = CURRENCY_MAPPING[country as keyof typeof CURRENCY_MAPPING] || "UYU";
-          
+
           if (mlPrice.currency === localCurrency && currenciesData && currenciesData[localCurrency]?.["USD"]) {
             // Convert local currency to USD
             const usdRate = currenciesData[localCurrency]["USD"];
@@ -772,9 +827,9 @@ function createButtonClickHandler(
         }
       }
 
-      const searchURL = createSearchURL(platform, productName, platform === "ebay" ? maxPriceUSD : undefined);
+      const searchURL = await createSearchURL(platform, productName, platform === "ebay" ? maxPriceUSD : undefined);
       console.log(`${itemType} ${platform} search URL:`, searchURL);
-      
+
       const response = await sendMessagePromise({
         url: searchURL,
         msg: "request",
@@ -806,7 +861,7 @@ function createButtonClickHandler(
 
         // Improved price comparison logic that handles all currencies
         let isBetterPrice = false;
-        
+
         if (mlPrice.currency === "USD" && bestMatch.currency === "USD") {
           // Both in USD - direct comparison
           isBetterPrice = bestMatch.price < mlPrice.price;
@@ -956,7 +1011,7 @@ function setupMainProductButtonHandlers(container: HTMLElement, productName: str
   const amazonBtn = container.querySelector(SELECTORS.AMAZON_BUTTON) as HTMLButtonElement;
 
   // Create a dummy element for the main product context since we don't have a specific item element
-  const dummyElement = document.createElement('div');
+  const dummyElement = document.createElement("div");
 
   if (ebayBtn) {
     ebayBtn.onclick = createButtonClickHandler("ebay", productName, dummyElement, ebayBtn, "main");
@@ -1003,7 +1058,7 @@ function processProductItem(item: Element, index: number): void {
  */
 function processMainProduct(): void {
   console.log("🔍 processMainProduct() called");
-  
+
   // Check if extension is enabled
   if (!extensionConfig.enabled) {
     console.log("⚠️ Extension disabled, skipping main product processing");
@@ -1011,21 +1066,22 @@ function processMainProduct(): void {
   }
 
   console.log("🔍 Looking for price container with selector:", SELECTORS.PDP_MAIN_PRICE_CONTAINER);
-  
+
   // Check if we already processed the main product - look for any extension button container in the price area
   const priceContainer = document.querySelector(SELECTORS.PDP_MAIN_PRICE_CONTAINER);
   if (!priceContainer) {
     console.log("❌ Price container not found with selector:", SELECTORS.PDP_MAIN_PRICE_CONTAINER);
-    
+
     // Debug: try to find what price elements exist
     const allPriceElements = document.querySelectorAll('[id*="price"], [class*="price"], [class*="pdp"]');
     console.log("🔍 Found price-related elements:", allPriceElements.length);
     allPriceElements.forEach((el, i) => {
-      if (i < 5) { // Only log first 5 to avoid spam
-        console.log(`  ${i+1}. ${el.tagName}#${el.id || 'no-id'}.${el.className || 'no-class'}`);
+      if (i < 5) {
+        // Only log first 5 to avoid spam
+        console.log(`  ${i + 1}. ${el.tagName}#${el.id || "no-id"}.${el.className || "no-class"}`);
       }
     });
-    
+
     return;
   }
 
@@ -1044,7 +1100,7 @@ function processMainProduct(): void {
   // Get product name from title or URL
   let productName = getMainProductTitle();
   console.log("🏷️ Product name from title:", productName);
-  
+
   if (!productName) {
     productName = getProductTitleFromURL();
     console.log("🏷️ Product name from URL:", productName);
@@ -1052,16 +1108,16 @@ function processMainProduct(): void {
 
   if (!productName) {
     console.warn("❌ Could not extract product name for main product");
-    
+
     // Debug: check what title elements exist
     const titleElements = document.querySelectorAll('h1, [class*="title"], [class*="pdp"]');
     console.log("🔍 Found title-related elements:", titleElements.length);
     titleElements.forEach((el, i) => {
       if (i < 3) {
-        console.log(`  ${i+1}. ${el.tagName}.${el.className || 'no-class'}: "${el.textContent?.substring(0, 50) || 'no-text'}"`);
+        console.log(`  ${i + 1}. ${el.tagName}.${el.className || "no-class"}: "${el.textContent?.substring(0, 50) || "no-text"}"`);
       }
     });
-    
+
     return;
   }
 
@@ -1243,7 +1299,7 @@ function setupCarouselObserver(): void {
 function processAllItems(): void {
   console.log("🚀 processAllItems() called");
   console.log("🌐 Current URL:", window.location.href);
-  
+
   // Don't process if extension is disabled
   if (!extensionConfig.enabled) {
     console.log("⚠️ Extension is disabled, skipping item processing");
@@ -1258,7 +1314,7 @@ function processAllItems(): void {
   // Check if we're on a product detail page
   const isProductPage = isProductDetailPage();
   console.log("🔍 Is product detail page:", isProductPage);
-  
+
   if (isProductPage) {
     console.log("📄 Processing product detail page...");
 
