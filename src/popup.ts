@@ -5,6 +5,10 @@ interface ExtensionSettings {
   notifications: boolean;
   language: "es" | "pt";
   geminiApiKey: string;
+  aiSearchEnabled: boolean;
+  onlyNew: boolean;
+  maxCachedQueries: number;
+  cacheExpirationDays: number;
 }
 
 interface ChromeMessages {
@@ -28,6 +32,10 @@ class PopupController {
     notifications: true,
     language: "es",
     geminiApiKey: "",
+    aiSearchEnabled: false,
+    onlyNew: false,
+    maxCachedQueries: 1000,
+    cacheExpirationDays: 30,
   };
 
   private messages: ChromeMessages = {};
@@ -55,6 +63,27 @@ class PopupController {
       geminiApiKeyValid: "API válida",
       geminiApiKeyInvalid: "API inválida",
       geminiApiKeyEmpty: "Sin configurar",
+      aiSearchLabel: "Búsquedas con IA",
+      aiSearchDescription: "Usar IA para optimizar búsquedas automáticamente",
+      onlyNewLabel: "Solo Nuevos",
+      onlyNewDescription: "Filtrar resultados para mostrar solo artículos nuevos",
+      settingsTab: "Configuración",
+      queriesTab: "Consultas IA",
+      queryStatsTitle: "Estadísticas de Consultas",
+      totalQueriesLabel: "Total",
+      cachedQueriesLabel: "En Caché",
+      savedTokensLabel: "Tokens Ahorrados",
+      queryManagementTitle: "Gestión de Consultas",
+      searchQueriesPlaceholder: "Buscar consultas...",
+      noQueriesMessage: "No hay consultas guardadas aún",
+      clearAllButton: "Limpiar Todo",
+      exportButton: "Exportar",
+      refreshButton: "Actualizar",
+      prevButton: "Anterior",
+      nextButton: "Siguiente",
+      deleteButton: "Eliminar",
+      usageCountLabel: "Usos",
+      lastUsedLabel: "Último uso",
       saveButton: "Guardar Configuración",
       resetButton: "Restablecer",
       aboutTitle: "Acerca de",
@@ -65,6 +94,12 @@ class PopupController {
       settingsReset: "Configuración restablecida",
       extensionEnabled: "¡Extensión habilitada - forzando renderizado!",
       extensionDisabled: "Extensión deshabilitada - limpiando elementos...",
+      aiEnabled: "IA habilitada para búsquedas",
+      aiDisabled: "IA deshabilitada",
+      manageQueriesButton: "Gestionar Consultas IA",
+      queriesCleared: "Todas las consultas han sido eliminadas",
+      queryDeleted: "Consulta eliminada",
+      queriesExported: "Consultas exportadas exitosamente",
     },
     pt: {
       enabled: "Habilitada",
@@ -87,6 +122,27 @@ class PopupController {
       geminiApiKeyValid: "API válida",
       geminiApiKeyInvalid: "API inválida",
       geminiApiKeyEmpty: "Não configurado",
+      aiSearchLabel: "Buscas com IA",
+      onlyNewLabel: "Somente Novos",
+      onlyNewDescription: "Filtrar resultados para mostrar apenas itens novos",
+      aiSearchDescription: "Usar IA para otimizar buscas automaticamente",
+      settingsTab: "Configuração",
+      queriesTab: "Consultas IA",
+      queryStatsTitle: "Estatísticas de Consultas",
+      totalQueriesLabel: "Total",
+      cachedQueriesLabel: "Em Cache",
+      savedTokensLabel: "Tokens Economizados",
+      queryManagementTitle: "Gestão de Consultas",
+      searchQueriesPlaceholder: "Buscar consultas...",
+      noQueriesMessage: "Nenhuma consulta salva ainda",
+      clearAllButton: "Limpar Tudo",
+      exportButton: "Exportar",
+      refreshButton: "Atualizar",
+      prevButton: "Anterior",
+      nextButton: "Próximo",
+      deleteButton: "Excluir",
+      usageCountLabel: "Usos",
+      lastUsedLabel: "Último uso",
       saveButton: "Salvar Configuração",
       resetButton: "Redefinir",
       aboutTitle: "Sobre",
@@ -97,6 +153,12 @@ class PopupController {
       settingsReset: "Configuração redefinida",
       extensionEnabled: "Extensão habilitada - forçando renderização!",
       extensionDisabled: "Extensão desabilitada - limpando elementos...",
+      aiEnabled: "IA habilitada para buscas",
+      aiDisabled: "IA desabilitada", 
+      manageQueriesButton: "Gerenciar Consultas IA",
+      queriesCleared: "Todas as consultas foram removidas",
+      queryDeleted: "Consulta removida",
+      queriesExported: "Consultas exportadas com sucesso",
     },
   };
 
@@ -292,11 +354,34 @@ class PopupController {
       this.saveSettings();
     });
 
+    // AI Search toggle
+    const aiToggle = document.getElementById("aiToggle") as HTMLInputElement;
+    aiToggle?.addEventListener("change", async (e) => {
+      const target = e.target as HTMLInputElement;
+      this.settings.aiSearchEnabled = target.checked;
+      
+      if (this.settings.aiSearchEnabled) {
+        this.showToast("aiEnabled", "success");
+      } else {
+        this.showToast("aiDisabled", "info");
+      }
+      
+      await this.saveSettings();
+    });
+
     // Notifications toggle
     const notificationsToggle = document.getElementById("notificationsToggle") as HTMLInputElement;
     notificationsToggle?.addEventListener("change", (e) => {
       const target = e.target as HTMLInputElement;
       this.settings.notifications = target.checked;
+      this.saveSettings();
+    });
+
+    // Only New items toggle (eBay)
+    const onlyNewToggle = document.getElementById("onlyNewToggle") as HTMLInputElement;
+    onlyNewToggle?.addEventListener("change", (e) => {
+      const target = e.target as HTMLInputElement;
+      this.settings.onlyNew = target.checked;
       this.saveSettings();
     });
 
@@ -358,6 +443,16 @@ class PopupController {
     testApiKey?.addEventListener("click", async () => {
       await this.testGeminiApiKey();
     });
+
+    // Manage Queries button
+    const manageQueriesBtn = document.getElementById("manageQueriesBtn");
+    manageQueriesBtn?.addEventListener("click", () => {
+      // Open queries management in a new tab
+      chrome.tabs.create({
+        url: chrome.runtime.getURL("queries.html"),
+        active: true
+      });
+    });
   }
 
   public updateUI(): void {
@@ -403,9 +498,13 @@ class PopupController {
   private updateToggles(): void {
     const animationsToggle = document.getElementById("animationsToggle") as HTMLInputElement;
     const notificationsToggle = document.getElementById("notificationsToggle") as HTMLInputElement;
+    const aiToggle = document.getElementById("aiToggle") as HTMLInputElement;
+    const onlyNewToggle = document.getElementById("onlyNewToggle") as HTMLInputElement;
 
     if (animationsToggle) animationsToggle.checked = this.settings.animations;
     if (notificationsToggle) notificationsToggle.checked = this.settings.notifications;
+    if (aiToggle) aiToggle.checked = this.settings.aiSearchEnabled;
+    if (onlyNewToggle) onlyNewToggle.checked = this.settings.onlyNew;
   }
 
   private updateLanguageSelect(): void {
@@ -542,6 +641,10 @@ class PopupController {
       notifications: true,
       language: "es",
       geminiApiKey: "",
+      aiSearchEnabled: false,
+      maxCachedQueries: 1000,
+      cacheExpirationDays: 30,
+      onlyNew: false,
     };
 
     await this.loadLanguage();

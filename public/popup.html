@@ -8,8 +8,8 @@
     <style>
       /* Custom styles for better Chrome extension UX */
       body {
-        min-width: 380px;
-        min-height: 520px;
+        min-width: 420px;
+        min-height: 580px;
       }
 
       #statusText {
@@ -21,6 +21,31 @@
       }
       .toggle-switch:checked {
         background-color: #10b981;
+      }
+
+      /* Query item styling */
+      .query-item {
+        transition: all 0.2s ease;
+      }
+      .query-item:hover {
+        background-color: #f8fafc;
+        border-color: #e2e8f0;
+      }
+
+      /* Scrollbar styling */
+      .overflow-y-auto::-webkit-scrollbar {
+        width: 4px;
+      }
+      .overflow-y-auto::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 2px;
+      }
+      .overflow-y-auto::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 2px;
+      }
+      .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
       }
 
       /* Toggle switch improvements */
@@ -116,7 +141,7 @@
     </div>
 
     <!-- Main Content -->
-    <div class="p-4 space-y-4 fade-in">
+    <div class="p-4 space-y-4">
       <!-- Extension Status Card -->
       <div class="settings-card bg-white rounded-xl p-4 shadow-md border border-gray-100">
         <div class="flex justify-flex-start flex-col gap-4">
@@ -158,6 +183,38 @@
       <div class="settings-card bg-white rounded-xl p-4 shadow-md border border-gray-100">
         <h3 class="font-semibold text-gray-800 text-sm mb-4">Opciones Adicionales</h3>
         <div class="space-y-3">
+          <!-- AI Toggle -->
+          <div class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors">
+            <div class="flex-1">
+              <h4 class="text-sm font-medium text-gray-700 flex items-center space-x-2">
+                <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                </svg>
+                <span data-i18n="aiSearchLabel">Búsquedas con IA</span>
+              </h4>
+              <p class="text-xs text-gray-500" data-i18n="aiSearchDescription">Usar IA para optimizar búsquedas automáticamente</p>
+            </div>
+            <div class="toggle-container">
+              <input type="checkbox" id="aiToggle" />
+              <span class="toggle-slider"></span>
+            </div>
+          </div>
+          <!-- eBay Only New Items Toggle -->
+          <div class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors">
+            <div class="flex-1">
+              <h4 class="text-sm font-medium text-gray-700 flex items-center space-x-2">
+                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span data-i18n="onlyNewLabel">Solo Artículos Nuevos (eBay)</span>
+              </h4>
+              <p class="text-xs text-gray-500" data-i18n="onlyNewDescription">Buscar solo productos nuevos/sin usar en eBay</p>
+            </div>
+            <div class="toggle-container">
+              <input type="checkbox" id="onlyNewToggle" />
+              <span class="toggle-slider"></span>
+            </div>
+          </div>
           <!-- Animations Toggle -->
           <div class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors">
             <div class="flex-1">
@@ -217,6 +274,16 @@
               </svg>
               <div class="text-xs text-purple-700"><strong>IA para mejores búsquedas:</strong> Gemini optimiza automáticamente los términos de búsqueda para encontrar productos más relevantes en eBay y Amazon.</div>
             </div>
+          </div>
+
+          <!-- Manage Queries Button -->
+          <div class="mt-3">
+            <button id="manageQueriesBtn" class="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white py-2 px-4 rounded-lg font-medium text-sm transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-lg flex items-center justify-center space-x-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 01-2 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+              </svg>
+              <span data-i18n="manageQueriesButton">Gestionar Consultas IA</span>
+            </button>
           </div>
         </div>
       </div>

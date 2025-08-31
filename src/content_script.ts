@@ -1,6 +1,100 @@
 import { amazonFront } from "./classes/AmazonFront";
 import { ebayFront } from "./classes/EbayFront";
-import { Item } from "./interfaces/products.interface";
+import { AIQuery, Item } from "./interfaces/products.interface";
+
+// Self-contained AI Query Management (inline to avoid module loading issues)
+class InlineAIQueryManager {
+  private static readonly STORAGE_KEY = 'aiQueries';
+  private static readonly MAX_QUERIES = 1000;
+  private static readonly CACHE_EXPIRATION_DAYS = 30;
+
+  static generateQueryId(originalQuery: string): string {
+    return btoa(originalQuery.toLowerCase().trim()).replace(/[^A-Za-z0-9]/g, '').substring(0, 16);
+  }
+
+  static async saveQuery(originalQuery: string, optimizedQuery: string, source: 'gemini' | 'manual' = 'gemini'): Promise<void> {
+    try {
+      const queryId = this.generateQueryId(originalQuery);
+      const timestamp = Date.now();
+      
+      const result = await new Promise<{[key: string]: any}>((resolve) => {
+        chrome.storage.local.get([this.STORAGE_KEY], resolve);
+      });
+
+      const queries: AIQuery[] = result[this.STORAGE_KEY] || [];
+      const existingIndex = queries.findIndex(q => q.id === queryId);
+      
+      if (existingIndex >= 0) {
+        // Update existing query
+        queries[existingIndex].usageCount += 1;
+        queries[existingIndex].lastUsed = timestamp;
+        queries[existingIndex].optimizedQuery = optimizedQuery;
+      } else {
+        // Add new query
+        const newQuery: AIQuery = {
+          id: queryId,
+          originalQuery,
+          optimizedQuery,
+          timestamp,
+          usageCount: 1,
+          tokensSaved: Math.floor(originalQuery.length / 4),
+          source,
+          lastUsed: timestamp
+        };
+        
+        queries.push(newQuery);
+        
+        // Keep only recent queries
+        if (queries.length > this.MAX_QUERIES) {
+          queries.sort((a, b) => b.lastUsed - a.lastUsed);
+          queries.splice(this.MAX_QUERIES);
+        }
+      }
+
+      await new Promise<void>((resolve) => {
+        chrome.storage.local.set({ [this.STORAGE_KEY]: queries }, resolve);
+      });
+      
+      console.log("💾 [AI] Query saved successfully:", queryId);
+    } catch (error) {
+      console.error("❌ [AI] Error saving query:", error);
+    }
+  }
+
+  static async getCachedQuery(originalQuery: string): Promise<AIQuery | null> {
+    try {
+      const queryId = this.generateQueryId(originalQuery);
+      const result = await new Promise<{[key: string]: any}>((resolve) => {
+        chrome.storage.local.get([this.STORAGE_KEY], resolve);
+      });
+
+      const queries: AIQuery[] = result[this.STORAGE_KEY] || [];
+      const query = queries.find(q => q.id === queryId);
+      
+      if (query) {
+        // Check if query is still valid (not expired)
+        const isExpired = (Date.now() - query.timestamp) > (this.CACHE_EXPIRATION_DAYS * 24 * 60 * 60 * 1000);
+        if (!isExpired) {
+          // Update usage statistics
+          query.usageCount += 1;
+          query.lastUsed = Date.now();
+          
+          // Save updated query
+          await new Promise<void>((resolve) => {
+            chrome.storage.local.set({ [this.STORAGE_KEY]: queries }, resolve);
+          });
+          
+          return query;
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error("❌ [AI] Error getting cached query:", error);
+      return null;
+    }
+  }
+}
 
 // IMMEDIATE CONSOLE LOGS FOR DEBUGGING
 console.log("%c🚨 MERCADOLIBRE EXTENSION - CONTENT SCRIPT LOADING! 🚨", "background: #ff0000; color: #ffffff; font-size: 16px; font-weight: bold; padding: 10px;");
@@ -19,7 +113,6 @@ console.log("%c🔍 PRODUCT URL PATTERN:", isProductURL ? "✅ MATCHES" : "❌ N
 
 // Constants
 const SELECTORS = {
-  // Search page product item selectors
   PRODUCT_ITEMS: ".ui-search-layout .ui-search-result, .ui-search-layout .poly-card, .poly-card, .andes-card.andes-card--flat.andes-card--padding-16",
   PRODUCT_TITLE_OLD: ".ui-search-item__title",
   PRODUCT_TITLE_NEW: ".poly-component__title, .dynamic-carousel__title",
@@ -102,10 +195,19 @@ let extensionConfig = {
   notifications: true,
   language: "es",
   geminiApiKey: "",
+  aiSearchEnabled: false,
+  onlyNew: false,
 };
 
 console.log("🚀 MercadoLibre Extension - Content Script Loaded!");
 console.log("🌐 Current URL:", window.location.href);
+
+// Make InlineAIQueryManager globally accessible for testing and debugging
+(window as any).InlineAIQueryManager = InlineAIQueryManager;
+console.log("🤖 [AI] InlineAIQueryManager initialized successfully!");
+
+// Set flag for extension detection
+(window as any).mercadoLibreExtensionLoaded = true;
 
 // Load initial configuration
 function loadConfiguration() {
@@ -517,23 +619,41 @@ function findMostSimilarProduct(target: string, products: Item[]): Item | null {
 
 /**
  * Optimizes search query using Gemini AI
+ * Now respects aiSearchEnabled setting and stores/caches queries
  */
 async function optimizeSearchQueryWithGemini(productName: string, geminiApiKey?: string): Promise<string> {
+  // If AI search is disabled, use fallback optimization
+  if (!extensionConfig.aiSearchEnabled) {
+    console.log("🤖 [AI] AI Search is disabled, using fallback optimization");
+    return optimizeSearchQuery(productName);
+  }
+
+  // If no API key or product name, use fallback
   if (!geminiApiKey || !productName) {
+    console.log("🤖 [AI] Missing API key or product name, using fallback optimization");
     return optimizeSearchQuery(productName);
   }
 
   try {
+    // Check if we have a cached query first
+    const cachedQuery = await InlineAIQueryManager.getCachedQuery(productName);
+    if (cachedQuery) {
+      console.log("🤖 [AI] Using cached optimized query:", cachedQuery.optimizedQuery);
+      return cachedQuery.optimizedQuery;
+    }
+
     console.log("🤖 [GEMINI] Optimizing search query with AI:", productName);
 
     const prompt = [
       `Given this product name from MercadoLibre: "${productName}"`,
       `Please create an optimized search query for eBay and Amazon that will find the same or similar product. The optimized query should:`,
-      `1. Remove brand names if they're too specific for the marketplace`,
-      `2. Keep essential product features and characteristics`,
-      `3. Use English terms when appropriate for international marketplaces`,
-      `4. Be concise but descriptive (max 10 words)`,
-      `5. Remove filler words like "para", "de", "con", etc.`,
+      `1. PRESERVE EXACT MODEL NUMBERS AND HARDWARE SPECIFICATIONS (RTX 5060, RTX 4090, i7-12700F, etc.) - DO NOT change or "correct" model numbers`,
+      `2. Keep essential product features, technical specifications, and model numbers exactly as written`,
+      `3. Remove only generic filler words like "para", "de", "con", "original", "nuevo", etc.`,
+      `4. Use English terms when appropriate for international marketplaces`,
+      `5. Be concise but descriptive (max 12 words)`,
+      `6. CRITICAL: Never change hardware model numbers like RTX 5060 to RTX 3060 or similar "corrections"`,
+      `Only respond with the optimized search query, nothing else.`,
       `Only respond with the optimized search query, nothing else.`,
     ].join("\n");
 
@@ -564,6 +684,10 @@ async function optimizeSearchQueryWithGemini(productName: string, geminiApiKey?:
 
     if (optimizedQuery && optimizedQuery.length > 0) {
       console.log("🤖 [GEMINI] AI optimized query:", optimizedQuery);
+      
+      // Save the query to storage for future use
+      await InlineAIQueryManager.saveQuery(productName, optimizedQuery, 'gemini');
+
       return optimizedQuery;
     } else {
       throw new Error("Empty response from Gemini");
@@ -728,7 +852,7 @@ function currencyConversion(item: Item, currencySymbol = "UYU"): CurrencyConvers
 /**
  * Creates search URL for platform
  */
-async function createSearchURL(platform: "ebay" | "amazon", query: string, maxPrice?: number): Promise<string> {
+async function createSearchURL(platform: "ebay" | "amazon", query: string, maxPrice?: number, onlyNew = false): Promise<string> {
   const optimizedQuery = await optimizeSearchQueryWithGemini(query, extensionConfig.geminiApiKey);
 
   if (platform === "ebay") {
@@ -738,7 +862,7 @@ async function createSearchURL(platform: "ebay" | "amazon", query: string, maxPr
       LH_BIN: "1",
       _sop: "15",
       rt: "nc",
-      LH_ItemCondition: "1000|1500|2000|2500|3000",
+      LH_ItemCondition: onlyNew ? "2000|3" : "1000|1500|2000|2500|3000",
       _pgn: "1",
       _skc: "50",
     };
@@ -746,6 +870,9 @@ async function createSearchURL(platform: "ebay" | "amazon", query: string, maxPr
     // Add max price filter if provided
     if (maxPrice && maxPrice > 0) {
       searchParams._udhi = Math.floor(maxPrice).toString();
+      if(maxPrice > 100) {
+        searchParams._udlo = Math.min(Math.floor(maxPrice) - 50, 100).toString();
+      }
     }
 
     return "https://www.ebay.com/sch/i.html?" + new URLSearchParams(searchParams).toString();
@@ -827,7 +954,7 @@ function createButtonClickHandler(platform: "ebay" | "amazon", productName: stri
         }
       }
 
-      const searchURL = await createSearchURL(platform, productName, platform === "ebay" ? maxPriceUSD : undefined);
+      const searchURL = await createSearchURL(platform, productName, platform === "ebay" ? maxPriceUSD : undefined, extensionConfig.onlyNew);
       console.log(`${itemType} ${platform} search URL:`, searchURL);
 
       const response = await sendMessagePromise({
@@ -880,7 +1007,7 @@ function createButtonClickHandler(platform: "ebay" | "amazon", productName: stri
         const baseClasses = itemType === "main" ? "btn_ml_app btn_ml_app_main" : "btn_ml_app";
         button.className = `${baseClasses} ${className}`;
         button.innerHTML = `<div style="color: inherit !important; text-decoration: none !important;">
-          ${icon}$${bestMatch.price}
+          ${icon}US$ ${bestMatch.price}
         </div>`;
       }
 
@@ -1047,7 +1174,7 @@ function processProductItem(item: Element, index: number): void {
   }
 
   const buttonContainer = createButtonContainer();
-  (item as HTMLElement).style.position = "relative";
+   (item as HTMLElement).style.position = "relative";
   (item as HTMLElement).appendChild(buttonContainer);
   setupButtonHandlers(buttonContainer, productName, item);
   processingQueue.delete(item);
@@ -1349,7 +1476,8 @@ function setupIntervalMonitoring(): void {
   }
 
   checkInterval = window.setInterval(() => {
-    if (window.location.href.includes("mercadolibre.com")) {
+    const isMercadoLibre = window.location.href.includes("mercadolibre.com") || window.location.href.includes("mercadolivre.com");
+    if (isMercadoLibre) {
       // Only process search results, not PDP items in interval
       if (!isProductDetailPage()) {
         processAllItems();
@@ -1401,8 +1529,12 @@ async function initializeCurrencyData(): Promise<{ currencyList: any; currencies
  * Initialize the extension
  */
 async function initializeExtension(): Promise<void> {
-  if (isInitialized || !window.location.href.includes("mercadolibre.com")) {
+  const isMercadoLibre = window.location.href.includes("mercadolibre.com") || window.location.href.includes("mercadolivre.com");
+  
+  if (isInitialized || !isMercadoLibre) {
     console.log("⚠️ Extension already initialized or not on MercadoLibre, skipping");
+    console.log("📍 Current URL:", window.location.href);
+    console.log("🔍 Is MercadoLibre domain:", isMercadoLibre);
     return;
   }
 
@@ -1434,7 +1566,8 @@ onload = async (event) => {
   console.log("🎬 Window onload event triggered!");
   console.log("🌐 Current URL:", window.location.href);
 
-  if (window.location.href.includes("mercadolibre.com")) {
+  const isMercadoLibre = window.location.href.includes("mercadolibre.com") || window.location.href.includes("mercadolivre.com");
+  if (isMercadoLibre) {
     console.log("🛒 MercadoLibre detected, initializing extension...");
     await initializeExtension();
   }
@@ -1442,7 +1575,8 @@ onload = async (event) => {
 
 document.addEventListener("DOMContentLoaded", () => {
   console.log("📄 DOMContentLoaded event fired!");
-  if (window.location.href.includes("mercadolibre.com") && !isInitialized) {
+  const isMercadoLibre = window.location.href.includes("mercadolibre.com") || window.location.href.includes("mercadolivre.com");
+  if (isMercadoLibre && !isInitialized) {
     console.log("🛒 MercadoLibre detected via DOMContentLoaded");
     initializeExtension();
   }
@@ -1459,7 +1593,7 @@ new MutationObserver(() => {
     // Clean up existing buttons when navigating
     cleanupAllExtensionElements();
 
-    if (url.includes("mercadolibre.com")) {
+    if (url.includes("mercadolibre.com") || url.includes("mercadolivre.com")) {
       console.log("🛒 Navigated within MercadoLibre, processing items...");
       isInitialized = false;
       setTimeout(() => {

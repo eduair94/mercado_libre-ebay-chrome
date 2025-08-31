@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title data-i18n="queryManagementTitle">Gestión de Consultas IA</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        min-height: 100vh;
+      }
+
+      .query-item {
+        transition: all 0.2s ease;
+      }
+      .query-item:hover {
+        background-color: #f8fafc;
+        border-color: #e2e8f0;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Custom scrollbar */
+      .overflow-y-auto::-webkit-scrollbar {
+        width: 6px;
+      }
+      .overflow-y-auto::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 3px;
+      }
+      .overflow-y-auto::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+      }
+      .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+
+      /* Animation for loading states */
+      .loading {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      /* Modal styling */
+      .modal {
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="min-h-screen p-8 max-w-7xl mx-auto">
+      <!-- Header -->
+      <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+              </svg>
+            </div>
+            <div>
+              <h1 class="text-2xl font-bold text-gray-800" data-i18n="queryManagementTitle">Gestión de Consultas IA</h1>
+              <p class="text-gray-500 text-sm" data-i18n="queryManagementDescription">Administra las consultas optimizadas con inteligencia artificial</p>
+            </div>
+          </div>
+          <button id="closeWindow" class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors" title="Cerrar pestaña">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Statistics Dashboard -->
+      <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center space-x-2">
+          <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+          </svg>
+          <span data-i18n="queryStatsTitle">Estadísticas de Consultas</span>
+        </h2>
+        <div class="grid grid-cols-4 gap-4">
+          <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg p-4 text-white">
+            <div class="flex items-center justify-between">
+              <div>
+                <div id="totalQueries" class="text-2xl font-bold">0</div>
+                <div class="text-purple-100 text-sm" data-i18n="totalQueriesLabel">Total</div>
+              </div>
+              <svg class="w-8 h-8 text-purple-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-4 text-white">
+            <div class="flex items-center justify-between">
+              <div>
+                <div id="cachedQueries" class="text-2xl font-bold">0</div>
+                <div class="text-green-100 text-sm" data-i18n="cachedQueriesLabel">En Caché</div>
+              </div>
+              <svg class="w-8 h-8 text-green-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-4 text-white">
+            <div class="flex items-center justify-between">
+              <div>
+                <div id="savedTokens" class="text-2xl font-bold">0</div>
+                <div class="text-blue-100 text-sm" data-i18n="savedTokensLabel">Tokens Ahorrados</div>
+              </div>
+              <svg class="w-8 h-8 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg p-4 text-white">
+            <div class="flex items-center justify-between">
+              <div>
+                <div id="avgTokensSaved" class="text-2xl font-bold">0</div>
+                <div class="text-orange-100 text-sm" data-i18n="avgTokensSavedLabel">Promedio/Consulta</div>
+              </div>
+              <svg class="w-8 h-8 text-orange-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls and Search -->
+      <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-5">
+          <div class="flex items-center space-x-4">
+            <input type="text" id="querySearch" placeholder="Buscar consultas..." class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm w-80" data-i18n-placeholder="searchQueriesPlaceholder" />
+            <select id="sourceFilter" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm">
+              <option value="all" data-i18n="allSources">Todas las fuentes</option>
+              <option value="gemini" data-i18n="geminiSource">Gemini</option>
+              <option value="manual" data-i18n="manualSource">Manual</option>
+            </select>
+            <select id="sortBy" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm">
+              <option value="lastUsed" data-i18n="sortByLastUsed">Último uso</option>
+              <option value="usageCount" data-i18n="sortByUsageCount">Más usadas</option>
+              <option value="timestamp" data-i18n="sortByCreated">Fecha creación</option>
+              <option value="tokensSaved" data-i18n="sortByTokens">Tokens ahorrados</option>
+            </select>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button id="exportQueries" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300 flex items-center space-x-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+              <span data-i18n="exportButton">Exportar</span>
+            </button>
+            <button id="refreshQueries" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 flex items-center space-x-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+              </svg>
+              <span data-i18n="refreshButton">Actualizar</span>
+            </button>
+            <button id="clearAllQueries" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-300 flex items-center space-x-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1H8a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+              <span data-i18n="clearAllButton">Limpiar Todo</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Query List -->
+      <div class="bg-white rounded-xl shadow-lg p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-gray-800 flex items-center space-x-2">
+            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 01-2 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+            </svg>
+            <span data-i18n="queryListTitle">Lista de Consultas</span>
+          </h2>
+          <div class="flex items-center space-x-2 text-sm text-gray-500">
+            <span data-i18n="showingResults">Mostrando</span>
+            <span id="showingCount">0</span>
+            <span data-i18n="ofTotal">de</span>
+            <span id="totalCount">0</span>
+            <span data-i18n="queries">consultas</span>
+          </div>
+        </div>
+
+        <!-- Query Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-gray-200">
+                <th class="text-left py-3 px-4 font-medium text-gray-700 text-sm" data-i18n="originalQueryLabel">Consulta Original</th>
+                <th class="text-left py-3 px-4 font-medium text-gray-700 text-sm" data-i18n="optimizedQueryLabel">Consulta Optimizada</th>
+                <th class="text-left py-3 px-4 font-medium text-gray-700 text-sm" data-i18n="sourceLabel">Fuente</th>
+                <th class="text-left py-3 px-4 font-medium text-gray-700 text-sm" data-i18n="usageCountLabel">Usos</th>
+                <th class="text-left py-3 px-4 font-medium text-gray-700 text-sm" data-i18n="tokensSavedLabel">Tokens</th>
+                <th class="text-left py-3 px-4 font-medium text-gray-700 text-sm" data-i18n="lastUsedLabel">Último Uso</th>
+                <th class="text-left py-3 px-4 font-medium text-gray-700 text-sm" data-i18n="actionsLabel">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="queryTableBody">
+              <!-- Query items will be inserted here -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-12">
+          <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 01-2 2m-6 7h.01M9 13h.01M15 13h.01M9 17h.01m6 0h.01M15 17h.01"></path>
+          </svg>
+          <h3 class="text-lg font-medium text-gray-700 mb-2" data-i18n="noQueriesTitle">No hay consultas guardadas</h3>
+          <p class="text-gray-500 text-sm" data-i18n="noQueriesMessage">Las consultas optimizadas aparecerán aquí cuando uses la búsqueda con IA</p>
+        </div>
+
+        <!-- Pagination -->
+        <div id="queryPagination" class="hidden flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+          <div class="flex items-center space-x-2">
+            <span class="text-sm text-gray-600" data-i18n="itemsPerPage">Elementos por página:</span>
+            <select id="itemsPerPage" class="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button id="prevPage" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+              </svg>
+              <span data-i18n="prevButton">Anterior</span>
+            </button>
+            <span id="pageInfo" class="text-sm text-gray-600">Página 1 de 1</span>
+            <button id="nextPage" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1">
+              <span data-i18n="nextButton">Siguiente</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Query Edit Modal -->
+    <div id="editModal" class="fixed inset-0 z-50 hidden modal">
+      <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
+          <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold text-gray-800" data-i18n="editQueryTitle">Editar Consulta</h3>
+              <button id="closeModal" class="text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors p-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2" data-i18n="originalQueryLabel">Consulta Original</label>
+                <input type="text" id="editOriginalQuery" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 text-sm" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2" data-i18n="optimizedQueryLabel">Consulta Optimizada</label>
+                <textarea id="editOptimizedQuery" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"></textarea>
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2" data-i18n="usageCountLabel">Usos</label>
+                  <input type="number" id="editUsageCount" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2" data-i18n="tokensSavedLabel">Tokens Ahorrados</label>
+                  <input type="number" id="editTokensSaved" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm" />
+                </div>
+              </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
+              <button id="cancelEdit" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-colors text-sm" data-i18n="cancelButton">Cancelar</button>
+              <button id="saveEdit" class="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors text-sm" data-i18n="saveButton">Guardar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 z-40 hidden bg-white bg-opacity-90 flex items-center justify-center">
+      <div class="text-center">
+        <div class="loading w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full mx-auto mb-4"></div>
+        <p class="text-gray-600" data-i18n="loadingQueries">Cargando consultas...</p>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-green-500 text-white p-4 rounded-lg shadow-lg transform translate-y-full transition-transform duration-300 ease-out hidden">
+      <div class="flex items-center space-x-3">
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <span id="toastMessage" class="text-sm font-medium">¡Operación completada!</span>
+      </div>
+    </div>
+
+    <script src="js/queries.js"></script>
+  </body>
+</html>

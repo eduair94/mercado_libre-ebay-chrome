@@ -106,5 +106,89 @@
   "settingsReset": {
     "message": "Configuração redefinida para valores padrão",
     "description": "Mensagem de configuração redefinida"
+  },
+  "aiSearchLabel": {
+    "message": "Busca com IA",
+    "description": "Rótulo para habilitar busca com IA"
+  },
+  "aiSearchDescription": {
+    "message": "Utiliza inteligência artificial para otimizar as buscas",
+    "description": "Descrição da busca com IA"
+  },
+  "aiEnabled": {
+    "message": "IA Habilitada",
+    "description": "Estado de IA habilitada"
+  },
+  "aiDisabled": {
+    "message": "IA Desabilitada",
+    "description": "Estado de IA desabilitada"
+  },
+  "manageQueries": {
+    "message": "Gerenciar Consultas",
+    "description": "Botão para gerenciar consultas de IA"
+  },
+  "queryManagementTitle": {
+    "message": "Gerenciamento de Consultas de IA",
+    "description": "Título da janela de gerenciamento de consultas"
+  },
+  "totalQueries": {
+    "message": "Consultas Totais",
+    "description": "Total de consultas armazenadas"
+  },
+  "cachedQueries": {
+    "message": "Consultas em Cache",
+    "description": "Consultas armazenadas em cache"
+  },
+  "tokensSaved": {
+    "message": "Tokens Economizados",
+    "description": "Total de tokens economizados"
+  },
+  "searchQueries": {
+    "message": "Buscar consultas...",
+    "description": "Placeholder para buscar consultas"
+  },
+  "originalQuery": {
+    "message": "Consulta Original",
+    "description": "Consulta original do produto"
+  },
+  "optimizedQuery": {
+    "message": "Consulta Otimizada",
+    "description": "Consulta otimizada por IA"
+  },
+  "usageCount": {
+    "message": "Usos",
+    "description": "Quantidade de usos da consulta"
+  },
+  "lastUsed": {
+    "message": "Último Uso",
+    "description": "Data do último uso"
+  },
+  "actions": {
+    "message": "Ações",
+    "description": "Coluna de ações"
+  },
+  "edit": {
+    "message": "Editar",
+    "description": "Ação editar"
+  },
+  "delete": {
+    "message": "Excluir",
+    "description": "Ação excluir"
+  },
+  "clearAll": {
+    "message": "Limpar Tudo",
+    "description": "Limpar todas as consultas"
+  },
+  "exportData": {
+    "message": "Exportar Dados",
+    "description": "Exportar dados de consultas"
+  },
+  "noQueries": {
+    "message": "Não há consultas armazenadas",
+    "description": "Mensagem quando não há consultas"
+  },
+  "onlyNewLabel": {
+    "message": "Apenas Artigos Novos (eBay)",
+    "description": "Rótulo para filtrar apenas artigos novos no eBay"
   }
 }

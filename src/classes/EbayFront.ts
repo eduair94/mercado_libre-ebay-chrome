@@ -2,7 +2,6 @@ import StoreFront from "./StoreFront";
 
 class EbayFront extends StoreFront {
   parseHTML(data: string) {
-    console.log("html ebay", data);
     const parser = new DOMParser();
     const html = parser.parseFromString(data, "text/html");
     const productContainer = ".srp-results li.s-card";
