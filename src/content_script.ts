@@ -4,31 +4,48 @@ import { AIQuery, Item } from "./interfaces/products.interface";
 
 // Self-contained AI Query Management (inline to avoid module loading issues)
 class InlineAIQueryManager {
-  private static readonly STORAGE_KEY = 'aiQueries';
+  private static readonly STORAGE_KEY = "aiQueries";
   private static readonly MAX_QUERIES = 1000;
   private static readonly CACHE_EXPIRATION_DAYS = 30;
 
   static generateQueryId(originalQuery: string): string {
-    return btoa(originalQuery.toLowerCase().trim()).replace(/[^A-Za-z0-9]/g, '').substring(0, 16);
+    return btoa(originalQuery.toLowerCase().trim())
+      .replace(/[^A-Za-z0-9]/g, "")
+      .substring(0, 16);
   }
 
-  static async saveQuery(originalQuery: string, optimizedQuery: string, source: 'gemini' | 'manual' = 'gemini'): Promise<void> {
+  static async saveQuery(
+    originalQuery: string,
+    optimizedQuery: string,
+    source: "gemini" | "manual" = "gemini",
+    weightData?: {
+      estimatedWeight?: number;
+      weightConfidence?: "high" | "medium" | "low";
+      weightSource?: string;
+    }
+  ): Promise<void> {
     try {
       const queryId = this.generateQueryId(originalQuery);
       const timestamp = Date.now();
-      
-      const result = await new Promise<{[key: string]: any}>((resolve) => {
+
+      const result = await new Promise<{ [key: string]: any }>((resolve) => {
         chrome.storage.local.get([this.STORAGE_KEY], resolve);
       });
 
       const queries: AIQuery[] = result[this.STORAGE_KEY] || [];
-      const existingIndex = queries.findIndex(q => q.id === queryId);
-      
+      const existingIndex = queries.findIndex((q) => q.id === queryId);
+
       if (existingIndex >= 0) {
         // Update existing query
         queries[existingIndex].usageCount += 1;
         queries[existingIndex].lastUsed = timestamp;
         queries[existingIndex].optimizedQuery = optimizedQuery;
+        // Update weight data if provided
+        if (weightData) {
+          queries[existingIndex].estimatedWeight = weightData.estimatedWeight;
+          queries[existingIndex].weightConfidence = weightData.weightConfidence;
+          queries[existingIndex].weightSource = weightData.weightSource;
+        }
       } else {
         // Add new query
         const newQuery: AIQuery = {
@@ -39,11 +56,12 @@ class InlineAIQueryManager {
           usageCount: 1,
           tokensSaved: Math.floor(originalQuery.length / 4),
           source,
-          lastUsed: timestamp
+          lastUsed: timestamp,
+          ...weightData, // Spread weight data if provided
         };
-        
+
         queries.push(newQuery);
-        
+
         // Keep only recent queries
         if (queries.length > this.MAX_QUERIES) {
           queries.sort((a, b) => b.lastUsed - a.lastUsed);
@@ -54,7 +72,7 @@ class InlineAIQueryManager {
       await new Promise<void>((resolve) => {
         chrome.storage.local.set({ [this.STORAGE_KEY]: queries }, resolve);
       });
-      
+
       console.log("💾 [AI] Query saved successfully:", queryId);
     } catch (error) {
       console.error("❌ [AI] Error saving query:", error);
@@ -64,30 +82,30 @@ class InlineAIQueryManager {
   static async getCachedQuery(originalQuery: string): Promise<AIQuery | null> {
     try {
       const queryId = this.generateQueryId(originalQuery);
-      const result = await new Promise<{[key: string]: any}>((resolve) => {
+      const result = await new Promise<{ [key: string]: any }>((resolve) => {
         chrome.storage.local.get([this.STORAGE_KEY], resolve);
       });
 
       const queries: AIQuery[] = result[this.STORAGE_KEY] || [];
-      const query = queries.find(q => q.id === queryId);
-      
+      const query = queries.find((q) => q.id === queryId);
+
       if (query) {
         // Check if query is still valid (not expired)
-        const isExpired = (Date.now() - query.timestamp) > (this.CACHE_EXPIRATION_DAYS * 24 * 60 * 60 * 1000);
+        const isExpired = Date.now() - query.timestamp > this.CACHE_EXPIRATION_DAYS * 24 * 60 * 60 * 1000;
         if (!isExpired) {
           // Update usage statistics
           query.usageCount += 1;
           query.lastUsed = Date.now();
-          
+
           // Save updated query
           await new Promise<void>((resolve) => {
             chrome.storage.local.set({ [this.STORAGE_KEY]: queries }, resolve);
           });
-          
+
           return query;
         }
       }
-      
+
       return null;
     } catch (error) {
       console.error("❌ [AI] Error getting cached query:", error);
@@ -204,6 +222,10 @@ let extensionConfig = {
   geminiApiKey: "",
   aiSearchEnabled: false,
   onlyNew: false,
+  shippingEnabled: false,
+  shippingCostPerKg: 5.0,
+  maxCachedQueries: 1000,
+  cacheExpirationDays: 30,
 };
 
 console.log("🚀 MercadoLibre Extension - Content Script Loaded!");
@@ -437,7 +459,7 @@ function createCurrencyToggleHandler(platform: "ebay" | "amazon", productName: s
 
     const buttonId = generateButtonId(platform, productName, itemType);
     const state = currencyDisplayState.get(buttonId);
-    
+
     if (!state) {
       console.warn("No currency state found for button:", buttonId);
       return;
@@ -445,10 +467,10 @@ function createCurrencyToggleHandler(platform: "ebay" | "amazon", productName: s
 
     const country = window.location.hostname.split(".").pop()?.toLowerCase() || "uy";
     const localCurrency = CURRENCY_MAPPING[country as keyof typeof CURRENCY_MAPPING] || "UYU";
-    
-    const btnText = button.querySelector('.btn-text');
+
+    const btnText = button.querySelector(".btn-text");
     const toggleBtn = button.querySelector(`.currency_toggle_${platform}`) as HTMLButtonElement;
-    
+
     if (!btnText || !toggleBtn) {
       console.warn("Button elements not found for currency toggle");
       return;
@@ -456,7 +478,7 @@ function createCurrencyToggleHandler(platform: "ebay" | "amazon", productName: s
 
     if (state.showingLocal) {
       // Switch back to USD
-      btnText.innerHTML = `US$ ${state.originalPrice}`;
+      btnText.innerHTML = formatPriceWithShipping(productName, state.originalPrice, "USD");
       toggleBtn.textContent = localCurrency;
       toggleBtn.title = `Mostrar en ${localCurrency}`;
       state.showingLocal = false;
@@ -477,14 +499,14 @@ function createCurrencyToggleHandler(platform: "ebay" | "amazon", productName: s
           watchCount: 0,
           soldCount: 0,
           bidCount: 0,
-          link: null
+          link: null,
         };
-        
+
         const conversion = currencyConversion(mockItem, localCurrency);
         state.convertedPrice = conversion.priceRaw;
         state.convertedCurrency = conversion.currencyAlt;
       }
-      
+
       // Show converted price
       let referencePrice = 0;
       if (itemType === "main") {
@@ -494,14 +516,89 @@ function createCurrencyToggleHandler(platform: "ebay" | "amazon", productName: s
       } else {
         referencePrice = getMercadoLibrePrice(item)?.price || 0;
       }
-      
-      btnText.innerHTML = `${state.convertedCurrency} ${Math.round(state.convertedPrice!).toLocaleString()}`;
+
+      btnText.innerHTML = formatPriceWithShipping(productName, Math.round(state.convertedPrice!), state.convertedCurrency!, true);
       toggleBtn.textContent = "USD";
       toggleBtn.title = "Mostrar en USD";
       state.showingLocal = true;
     }
 
     currencyDisplayState.set(buttonId, state);
+  };
+}
+
+/**
+ * Formats currency value for display
+ */
+function formatCurrency(amount: number, currency: string): string {
+  const currencySymbol = currency === "USD" ? "US$" : currency;
+  return `${currencySymbol} ${amount.toFixed(2)}`;
+}
+
+/**
+ * Formats price with shipping cost if enabled
+ */
+function formatPriceWithShipping(productName: string, price: number, currency: string, isLocalCurrency = false): string {
+  const shippingData = calculateShippingCost(productName);
+  const currencySymbol = currency === "USD" ? "US$" : currency;
+
+  if (extensionConfig.shippingEnabled && shippingData.shippingCost > 0) {
+    const totalPrice = price + shippingData.shippingCost;
+    const shippingText = `+ ${formatCurrency(shippingData.shippingCost, currency).replace(currencySymbol + " ", "")} envío`;
+    return `${currencySymbol} ${totalPrice.toFixed(2)}`;
+  }
+
+  return `${currencySymbol} ${price.toFixed(2)}`;
+}
+
+/**
+ * Calculates estimated shipping cost based on weight and configuration
+ */
+function calculateShippingCost(productName: string, weightKg?: number): { shippingCost: number; totalWeight: number; source: string } {
+  if (!extensionConfig.shippingEnabled || extensionConfig.shippingCostPerKg <= 0) {
+    return { shippingCost: 0, totalWeight: 0, source: "disabled" };
+  }
+
+  let estimatedWeight = weightKg;
+  let source = "provided";
+
+  // Basic weight estimation as fallback
+  if (!estimatedWeight) {
+    const productLower = productName.toLowerCase();
+
+    // Electronics weight estimation
+    if (productLower.includes("laptop") || productLower.includes("notebook")) {
+      estimatedWeight = 2.5;
+    } else if (productLower.includes("smartphone") || productLower.includes("celular") || productLower.includes("phone")) {
+      estimatedWeight = 0.2;
+    } else if (productLower.includes("tablet")) {
+      estimatedWeight = 0.5;
+    } else if (productLower.includes("monitor") || productLower.includes("pantalla")) {
+      estimatedWeight = 5.0;
+    } else if (productLower.includes("keyboard") || productLower.includes("teclado")) {
+      estimatedWeight = 1.0;
+    } else if (productLower.includes("mouse") || productLower.includes("ratón")) {
+      estimatedWeight = 0.15;
+    } else if (productLower.includes("headphone") || productLower.includes("auricular")) {
+      estimatedWeight = 0.3;
+    } else if (productLower.includes("book") || productLower.includes("libro")) {
+      estimatedWeight = 0.4;
+    } else if (productLower.includes("clothing") || productLower.includes("ropa") || productLower.includes("shirt") || productLower.includes("camisa")) {
+      estimatedWeight = 0.3;
+    } else {
+      // Default weight for unknown products
+      estimatedWeight = 1.0;
+    }
+
+    source = "basic_estimation";
+  }
+
+  const shippingCost = estimatedWeight * extensionConfig.shippingCostPerKg;
+
+  return {
+    shippingCost: Math.round(shippingCost * 100) / 100, // Round to 2 decimal places
+    totalWeight: estimatedWeight,
+    source,
   };
 }
 
@@ -709,6 +806,36 @@ function findMostSimilarProduct(target: string, products: Item[]): Item | null {
   return products.find((el) => el.price) || products[0];
 }
 
+function extractJsonFromString<T = any>(text: string): T {
+  // Remove markdown fences like ```json ... ```
+  const cleaned = text
+    .replace(/```json/i, "") // remove opening ```json
+    .replace(/```/g, "") // remove closing ```
+    .trim();
+
+  // Extract the JSON block
+  const match = cleaned.match(/{[\s\S]*}/);
+  if (!match) {
+    throw new Error("No JSON found in string");
+  }
+
+  try {
+    return JSON.parse(match[0]) as T;
+  } catch {
+    // Extract the JSON block
+    const match = cleaned.match(/{[\s\S]*}/);
+    if (!match) {
+      throw new Error("No JSON found in string");
+    }
+
+    try {
+      return JSON.parse(match[0]) as T;
+    } catch {
+      throw new Error("Invalid JSON found in string");
+    }
+  }
+}
+
 /**
  * Optimizes search query using Gemini AI
  * Now respects aiSearchEnabled setting and stores/caches queries
@@ -738,15 +865,34 @@ async function optimizeSearchQueryWithGemini(productName: string, geminiApiKey?:
 
     const prompt = [
       `Given this product name from MercadoLibre: "${productName}"`,
-      `Please create an optimized search query for eBay and Amazon that will find the same or similar product. The optimized query should:`,
-      `1. PRESERVE EXACT MODEL NUMBERS AND HARDWARE SPECIFICATIONS (RTX 5060, RTX 4090, i7-12700F, etc.) - DO NOT change or "correct" model numbers`,
+      `Please provide a JSON response with the following structure:`,
+      `{`,
+      `  "optimizedQuery": "optimized search query",`,
+      `  "estimatedWeight": weight_in_kg_as_number_or_null,`,
+      `  "weightConfidence": "high|medium|low",`,
+      `  "weightSource": "explanation_of_weight_estimation"`,
+      `}`,
+      ``,
+      `For the optimizedQuery:`,
+      `1. PRESERVE EXACT MODEL NUMBERS AND HARDWARE SPECIFICATIONS (RTX 5060, RTX 4090, i7-12700F, etc.)`,
       `2. Keep essential product features, technical specifications, and model numbers exactly as written`,
       `3. Remove only generic filler words like "para", "de", "con", "original", "nuevo", etc.`,
       `4. Use English terms when appropriate for international marketplaces`,
       `5. Be concise but descriptive (max 12 words)`,
-      `6. CRITICAL: Never change hardware model numbers like RTX 5060 to RTX 3060 or similar "corrections"`,
-      `Only respond with the optimized search query, nothing else.`,
-      `Only respond with the optimized search query, nothing else.`,
+      `6. CRITICAL: Never change hardware model numbers`,
+      ``,
+      `For the weight estimation:`,
+      `1. Estimate the weight in kilograms based on the product type and specifications`,
+      `2. Use your knowledge of typical weights for similar products`,
+      `3. For electronics: consider components, size, materials`,
+      `4. For clothing: estimate based on material and size`,
+      `5. For books/media: estimate based on format and page count`,
+      `6. For tools/hardware: consider materials and size`,
+      `7. If weight cannot be reasonably estimated, set estimatedWeight to null`,
+      `8. Set weightConfidence: "high" for products with predictable weights, "medium" for reasonable estimates, "low" for very uncertain`,
+      `9. Explain in weightSource how you estimated the weight`,
+      ``,
+      `Respond ONLY with valid JSON, no additional text.`,
     ].join("\n");
 
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`, {
@@ -772,18 +918,50 @@ async function optimizeSearchQueryWithGemini(productName: string, geminiApiKey?:
     }
 
     const data = await response.json();
-    const optimizedQuery = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    console.log("Response IA", data);
+    let aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
-    if (optimizedQuery && optimizedQuery.length > 0) {
-      console.log("🤖 [GEMINI] AI optimized query:", optimizedQuery);
-      
-      // Save the query to storage for future use
-      await InlineAIQueryManager.saveQuery(productName, optimizedQuery, 'gemini');
+    if (aiResponse && aiResponse.length > 0) {
+      console.log("🤖 [GEMINI] AI raw response:", aiResponse);
 
-      return optimizedQuery;
-    } else {
-      throw new Error("Empty response from Gemini");
+      try {
+        const parsedResponse = extractJsonFromString(aiResponse);
+
+        if (parsedResponse.optimizedQuery) {
+          const optimizedQuery = parsedResponse.optimizedQuery;
+          console.log("🤖 [GEMINI] AI optimized query:", optimizedQuery);
+
+          // Extract weight data if available
+          const weightData: any = {};
+          if (parsedResponse.estimatedWeight !== null && parsedResponse.estimatedWeight !== undefined) {
+            weightData.estimatedWeight = parseFloat(parsedResponse.estimatedWeight);
+            weightData.weightConfidence = parsedResponse.weightConfidence || "medium";
+            weightData.weightSource = parsedResponse.weightSource || "AI estimation";
+
+            console.log(`🤖 [GEMINI] Estimated weight: ${weightData.estimatedWeight}kg (${weightData.weightConfidence} confidence)`);
+            console.log(`🤖 [GEMINI] Weight source: ${weightData.weightSource}`);
+          }
+
+          // Save the query with weight data to storage for future use
+          await InlineAIQueryManager.saveQuery(productName, optimizedQuery, "gemini", weightData);
+
+          return optimizedQuery;
+        }
+      } catch (jsonError) {
+        console.warn("🤖 [GEMINI] Failed to parse JSON response, treating as plain text:", jsonError);
+
+        // Fallback: treat as plain text response (old format)
+        const optimizedQuery = aiResponse;
+        console.log("🤖 [GEMINI] AI optimized query (plain text):", optimizedQuery);
+
+        // Save without weight data
+        await InlineAIQueryManager.saveQuery(productName, optimizedQuery, "gemini");
+
+        return optimizedQuery;
+      }
     }
+
+    throw new Error("Empty or invalid response from Gemini");
   } catch (error) {
     console.warn("🤖 [GEMINI] AI optimization failed, using fallback:", error);
     return optimizeSearchQuery(productName);
@@ -945,21 +1123,20 @@ function currencyConversion(item: Item, currencySymbol = "UYU"): CurrencyConvers
  * Creates search URL for platform
  */
 async function createSearchURL(platform: "ebay" | "amazon", query: string, maxPrice?: number, onlyNew = false): Promise<string> {
+  let minPriceStr = "";
+  let maxPriceStr = "";
 
-  let minPriceStr = '';
-  let maxPriceStr = ''
-
-      // Add max price filter if provided
-    if (maxPrice && maxPrice > 0) {
-        maxPriceStr = Math.floor(maxPrice).toString();
-      if(maxPrice > 900) {
-        minPriceStr = Math.floor(maxPrice * 0.4).toString();
-      } else if(maxPrice > 100) {
-        minPriceStr = Math.min(Math.floor(maxPrice) - 50, 100).toString();
-      } else if(maxPrice > 50) {
-        minPriceStr = Math.floor(maxPrice * 0.5).toString();
-      }
+  // Add max price filter if provided
+  if (maxPrice && maxPrice > 0) {
+    maxPriceStr = Math.floor(maxPrice).toString();
+    if (maxPrice > 900) {
+      minPriceStr = Math.floor(maxPrice * 0.4).toString();
+    } else if (maxPrice > 100) {
+      minPriceStr = Math.min(Math.floor(maxPrice) - 50, 100).toString();
+    } else if (maxPrice > 50) {
+      minPriceStr = Math.floor(maxPrice * 0.5).toString();
     }
+  }
 
   const optimizedQuery = await optimizeSearchQueryWithGemini(query, extensionConfig.geminiApiKey);
 
@@ -975,10 +1152,10 @@ async function createSearchURL(platform: "ebay" | "amazon", query: string, maxPr
       _skc: "50",
     };
 
-    if(maxPriceStr) {
+    if (maxPriceStr) {
       searchParams._udhi = maxPriceStr;
     }
-    if(minPriceStr) {
+    if (minPriceStr) {
       searchParams._udlo = minPriceStr;
     }
 
@@ -989,8 +1166,8 @@ async function createSearchURL(platform: "ebay" | "amazon", query: string, maxPr
       new URLSearchParams({
         k: optimizedQuery,
         s: "price-asc-rank",
-        'low-price': minPriceStr,
-        'high-price': maxPriceStr,
+        "low-price": minPriceStr,
+        "high-price": maxPriceStr,
         qid: Date.now().toString(),
       }).toString()
     );
@@ -1113,25 +1290,25 @@ function createButtonClickHandler(platform: "ebay" | "amazon", productName: stri
         // Add the appropriate CSS classes based on item type
         const baseClasses = itemType === "main" ? "btn_ml_app btn_ml_app_main" : "btn_ml_app";
         button.className = `${baseClasses} ${className}`;
-        
+
         // Store currency state for this button
         const buttonId = generateButtonId(platform, productName, itemType);
         const localCurrency = CURRENCY_MAPPING[country as keyof typeof CURRENCY_MAPPING] || "UYU";
-        
+
         currencyDisplayState.set(buttonId, {
           showingLocal: false,
           originalPrice: bestMatch.price,
-          originalCurrency: bestMatch.currency
+          originalCurrency: bestMatch.currency,
         });
-        
+
         // Update button content and show refresh and currency toggle buttons
-        const btnText = button.querySelector('.btn-text');
+        const btnText = button.querySelector(".btn-text");
         if (btnText) {
-          btnText.innerHTML = `US$ ${bestMatch.price}`;
+          btnText.innerHTML = formatPriceWithShipping(productName, bestMatch.price, "USD");
         } else {
           button.innerHTML = `
             <span class="btn-text" style="color: inherit !important; text-decoration: none !important;">
-              US$ ${bestMatch.price}
+              ${formatPriceWithShipping(productName, bestMatch.price, "USD")}
             </span>
             <button class="currency_toggle_${platform}" style="
               position: absolute; 
@@ -1165,10 +1342,10 @@ function createButtonClickHandler(platform: "ebay" | "amazon", productName: stri
               display: block;
               padding: 0;
               line-height: 1;
-            " title="Actualizar ${platform === 'ebay' ? 'eBay' : 'Amazon'}">🔄</button>
+            " title="Actualizar ${platform === "ebay" ? "eBay" : "Amazon"}">🔄</button>
           `;
         }
-        
+
         // Show the refresh button for this platform
         const refreshBtn = button.querySelector(`.refresh_btn_${platform}`) as HTMLButtonElement;
         if (refreshBtn) {
@@ -1217,9 +1394,9 @@ function createIndividualRefreshHandler(platform: "ebay" | "amazon", productName
     refreshBtn.style.animation = "spin 1s linear infinite";
 
     // Add the spin animation CSS if it doesn't exist
-    if (!document.querySelector('#refresh-spin-animation')) {
-      const style = document.createElement('style');
-      style.id = 'refresh-spin-animation';
+    if (!document.querySelector("#refresh-spin-animation")) {
+      const style = document.createElement("style");
+      style.id = "refresh-spin-animation";
       style.textContent = `
         @keyframes spin {
           from { transform: rotate(0deg); }
@@ -1232,16 +1409,16 @@ function createIndividualRefreshHandler(platform: "ebay" | "amazon", productName
     try {
       // Reset this specific button state
       button.disabled = false;
-      
+
       // Reset button appearance and text
-      const btnText = button.querySelector('.btn-text');
+      const btnText = button.querySelector(".btn-text");
       if (btnText) {
         btnText.textContent = platform === "ebay" ? "🛒 eBay" : "📦 Amazon";
       } else {
         button.textContent = platform === "ebay" ? "🛒 eBay" : "📦 Amazon";
       }
-      
-      button.className = button.className.replace(/btn_ml_(success|danger)/g, '').trim();
+
+      button.className = button.className.replace(/btn_ml_(success|danger)/g, "").trim();
       if (itemType === "main") {
         button.className = `${platform}_btn btn_ml_app btn_ml_app_main`;
       } else {
@@ -1250,7 +1427,7 @@ function createIndividualRefreshHandler(platform: "ebay" | "amazon", productName
 
       // Hide the refresh and currency toggle buttons again until new search completes
       refreshBtn.style.display = "none";
-      
+
       const currencyToggleBtn = button.querySelector(`.currency_toggle_${platform}`) as HTMLButtonElement;
       if (currencyToggleBtn) {
         currencyToggleBtn.style.display = "none";
@@ -1270,7 +1447,6 @@ function createIndividualRefreshHandler(platform: "ebay" | "amazon", productName
       setTimeout(() => {
         refreshBtn.style.display = "none";
       }, 800);
-
     } catch (error) {
       console.error(`Error refreshing ${platform} button for ${itemType}:`, error);
       refreshBtn.textContent = "❌";
@@ -1296,7 +1472,7 @@ function createButtonContainer(): HTMLElement {
 
   const fontSize = sizeMap[extensionConfig.textSize as keyof typeof sizeMap] || "14px";
   const transition = extensionConfig.animations ? "all 0.3s ease" : "none";
-  
+
   // Get the local currency for this country
   const country = window.location.hostname.split(".").pop()?.toLowerCase() || "uy";
   const localCurrency = CURRENCY_MAPPING[country as keyof typeof CURRENCY_MAPPING] || "UYU";
@@ -1409,7 +1585,7 @@ function createMainProductButtonContainer(): HTMLElement {
 
   const fontSize = sizeMap[extensionConfig.textSize as keyof typeof sizeMap] || "14px";
   const transition = extensionConfig.animations ? "all 0.3s ease" : "none";
-  
+
   // Get the local currency for this country
   const country = window.location.hostname.split(".").pop()?.toLowerCase() || "uy";
   const localCurrency = CURRENCY_MAPPING[country as keyof typeof CURRENCY_MAPPING] || "UYU";
@@ -1574,7 +1750,7 @@ function processProductItem(item: Element, index: number): void {
   }
 
   const buttonContainer = createButtonContainer();
-   (item as HTMLElement).style.position = "relative";
+  (item as HTMLElement).style.position = "relative";
   (item as HTMLElement).appendChild(buttonContainer);
   setupButtonHandlers(buttonContainer, productName, item);
   processingQueue.delete(item);
@@ -1930,7 +2106,7 @@ async function initializeCurrencyData(): Promise<{ currencyList: any; currencies
  */
 async function initializeExtension(): Promise<void> {
   const isMercadoLibre = window.location.href.includes("mercadolibre.com") || window.location.href.includes("mercadolivre.com");
-  
+
   if (isInitialized || !isMercadoLibre) {
     console.log("⚠️ Extension already initialized or not on MercadoLibre, skipping");
     console.log("📍 Current URL:", window.location.href);

@@ -34,13 +34,21 @@ class QueryManagerController {
       sortByUsageCount: "Más usadas",
       sortByCreated: "Fecha creación",
       sortByTokens: "Tokens ahorrados",
+      sortByWeight: "Peso estimado",
       originalQueryLabel: "Consulta Original",
       optimizedQueryLabel: "Consulta Optimizada",
       sourceLabel: "Fuente",
+      estimatedWeightLabel: "Peso Est.",
       usageCountLabel: "Usos",
       tokensSavedLabel: "Tokens",
       lastUsedLabel: "Último Uso",
       actionsLabel: "Acciones",
+      weightConfidenceLabel: "Confianza Peso",
+      weightSourceLabel: "Fuente Peso",
+      notSpecified: "No especificado",
+      highConfidence: "Alta",
+      mediumConfidence: "Media",
+      lowConfidence: "Baja",
       editButton: "Editar",
       deleteButton: "Eliminar",
       exportButton: "Exportar",
@@ -86,13 +94,21 @@ class QueryManagerController {
       sortByUsageCount: "Mais usadas",
       sortByCreated: "Data criação",
       sortByTokens: "Tokens economizados",
+      sortByWeight: "Peso estimado",
       originalQueryLabel: "Consulta Original",
       optimizedQueryLabel: "Consulta Otimizada",
       sourceLabel: "Fonte",
+      estimatedWeightLabel: "Peso Est.",
       usageCountLabel: "Usos",
       tokensSavedLabel: "Tokens",
       lastUsedLabel: "Último Uso",
       actionsLabel: "Ações",
+      weightConfidenceLabel: "Confiança Peso",
+      weightSourceLabel: "Fonte Peso",
+      notSpecified: "Não especificado",
+      highConfidence: "Alta",
+      mediumConfidence: "Média",
+      lowConfidence: "Baixa",
       editButton: "Editar",
       deleteButton: "Excluir",
       exportButton: "Exportar",
@@ -342,6 +358,12 @@ class QueryManagerController {
           return b.timestamp - a.timestamp;
         case "tokensSaved":
           return b.tokensSaved - a.tokensSaved;
+        case "estimatedWeight":
+          // Sort by weight, handling undefined values (put them at the end)
+          if (a.estimatedWeight === undefined && b.estimatedWeight === undefined) return 0;
+          if (a.estimatedWeight === undefined) return 1;
+          if (b.estimatedWeight === undefined) return -1;
+          return b.estimatedWeight - a.estimatedWeight;
         default:
           return b.lastUsed - a.lastUsed;
       }
@@ -403,6 +425,23 @@ class QueryManagerController {
       return new Date(timestamp).toLocaleString(this.currentLanguage === 'es' ? 'es-ES' : 'pt-BR');
     };
 
+    const formatWeight = (query: AIQuery) => {
+      if (!query.estimatedWeight) return '<span class="text-gray-400 text-xs">-</span>';
+      
+      const confidence = query.weightConfidence || 'medium';
+      const confidenceColor = confidence === 'high' ? 'text-green-600' : 
+                               confidence === 'medium' ? 'text-yellow-600' : 'text-red-600';
+      const confidenceIcon = confidence === 'high' ? '●' : 
+                              confidence === 'medium' ? '◐' : '○';
+      
+      return `
+        <div class="text-sm">
+          <span class="font-medium text-gray-800">${query.estimatedWeight}kg</span>
+          <span class="${confidenceColor} text-xs ml-1" title="${query.weightSource || 'Sin fuente'}">${confidenceIcon}</span>
+        </div>
+      `;
+    };
+
     row.innerHTML = `
       <td class="py-3 px-4">
         <div class="max-w-xs truncate text-sm text-gray-800" title="${query.originalQuery}">
@@ -418,6 +457,9 @@ class QueryManagerController {
         <span class="px-2 py-1 text-xs rounded-full font-medium ${query.source === 'gemini' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}">
           ${query.source === 'gemini' ? 'Gemini' : 'Manual'}
         </span>
+      </td>
+      <td class="py-3 px-4">
+        ${formatWeight(query)}
       </td>
       <td class="py-3 px-4">
         <span class="text-sm font-medium text-gray-800">${query.usageCount}</span>
@@ -483,11 +525,17 @@ class QueryManagerController {
     const optimizedQueryInput = document.getElementById("editOptimizedQuery") as HTMLTextAreaElement;
     const usageCountInput = document.getElementById("editUsageCount") as HTMLInputElement;
     const tokensSavedInput = document.getElementById("editTokensSaved") as HTMLInputElement;
+    const estimatedWeightInput = document.getElementById("editEstimatedWeight") as HTMLInputElement;
+    const weightConfidenceSelect = document.getElementById("editWeightConfidence") as HTMLSelectElement;
+    const weightSourceInput = document.getElementById("editWeightSource") as HTMLInputElement;
 
     if (originalQueryInput) originalQueryInput.value = query.originalQuery;
     if (optimizedQueryInput) optimizedQueryInput.value = query.optimizedQuery;
     if (usageCountInput) usageCountInput.value = query.usageCount.toString();
     if (tokensSavedInput) tokensSavedInput.value = query.tokensSaved.toString();
+    if (estimatedWeightInput) estimatedWeightInput.value = query.estimatedWeight?.toString() || '';
+    if (weightConfidenceSelect) weightConfidenceSelect.value = query.weightConfidence || '';
+    if (weightSourceInput) weightSourceInput.value = query.weightSource || '';
 
     modal?.classList.remove("hidden");
   }
@@ -504,10 +552,16 @@ class QueryManagerController {
     const optimizedQueryInput = document.getElementById("editOptimizedQuery") as HTMLTextAreaElement;
     const usageCountInput = document.getElementById("editUsageCount") as HTMLInputElement;
     const tokensSavedInput = document.getElementById("editTokensSaved") as HTMLInputElement;
+    const estimatedWeightInput = document.getElementById("editEstimatedWeight") as HTMLInputElement;
+    const weightConfidenceSelect = document.getElementById("editWeightConfidence") as HTMLSelectElement;
+    const weightSourceInput = document.getElementById("editWeightSource") as HTMLInputElement;
 
     const optimizedQuery = optimizedQueryInput?.value.trim();
     const usageCount = parseInt(usageCountInput?.value || "0");
     const tokensSaved = parseInt(tokensSavedInput?.value || "0");
+    const estimatedWeight = estimatedWeightInput?.value ? parseFloat(estimatedWeightInput.value) : undefined;
+    const weightConfidence = weightConfidenceSelect?.value as 'high' | 'medium' | 'low' | undefined;
+    const weightSource = weightSourceInput?.value.trim() || undefined;
 
     if (!optimizedQuery) {
       this.showToast("La consulta optimizada no puede estar vacía", "error");
@@ -520,6 +574,9 @@ class QueryManagerController {
         query.optimizedQuery = optimizedQuery;
         query.usageCount = usageCount;
         query.tokensSaved = tokensSaved;
+        query.estimatedWeight = estimatedWeight;
+        query.weightConfidence = weightConfidence;
+        query.weightSource = weightSource;
         
         await AIQueryManager.updateQuery(query);
         await this.loadQueryList();

@@ -9,6 +9,8 @@ interface ExtensionSettings {
   onlyNew: boolean;
   maxCachedQueries: number;
   cacheExpirationDays: number;
+  shippingEnabled: boolean;
+  shippingCostPerKg: number;
 }
 
 interface ChromeMessages {
@@ -36,6 +38,8 @@ class PopupController {
     onlyNew: false,
     maxCachedQueries: 1000,
     cacheExpirationDays: 30,
+    shippingEnabled: false,
+    shippingCostPerKg: 5.0,
   };
 
   private messages: ChromeMessages = {};
@@ -100,6 +104,12 @@ class PopupController {
       queriesCleared: "Todas las consultas han sido eliminadas",
       queryDeleted: "Consulta eliminada",
       queriesExported: "Consultas exportadas exitosamente",
+      shippingLabel: "Cálculo de Envío",
+      shippingDescription: "Incluir costo estimado de envío basado en peso del producto",
+      enableShippingLabel: "Incluir Costo de Envío",
+      enableShippingDescription: "Añadir estimación de envío a los precios mostrados",
+      shippingCostPerKgLabel: "Costo por Kilogramo (USD)",
+      shippingCostHelper: "💡 Ejemplo: $5.00/kg es típico para envío internacional",
     },
     pt: {
       enabled: "Habilitada",
@@ -159,6 +169,12 @@ class PopupController {
       queriesCleared: "Todas as consultas foram removidas",
       queryDeleted: "Consulta removida",
       queriesExported: "Consultas exportadas com sucesso",
+      shippingLabel: "Cálculo de Envio",
+      shippingDescription: "Incluir custo estimado de envio baseado no peso do produto",
+      enableShippingLabel: "Incluir Custo de Envio",
+      enableShippingDescription: "Adicionar estimativa de envio aos preços mostrados",
+      shippingCostPerKgLabel: "Custo por Quilograma (USD)",
+      shippingCostHelper: "💡 Exemplo: $5.00/kg é típico para envio internacional",
     },
   };
 
@@ -453,6 +469,36 @@ class PopupController {
         active: true
       });
     });
+
+    // Shipping Cost Controls
+    const shippingToggle = document.getElementById("shippingToggle") as HTMLInputElement;
+    const shippingCostPerKg = document.getElementById("shippingCostPerKg") as HTMLInputElement;
+    const shippingCostContainer = document.getElementById("shippingCostContainer");
+
+    shippingToggle?.addEventListener("change", (e) => {
+      const target = e.target as HTMLInputElement;
+      this.settings.shippingEnabled = target.checked;
+      
+      // Show/hide the cost input container
+      if (shippingCostContainer) {
+        if (target.checked) {
+          shippingCostContainer.classList.remove("hidden");
+        } else {
+          shippingCostContainer.classList.add("hidden");
+        }
+      }
+      
+      this.saveSettings();
+    });
+
+    shippingCostPerKg?.addEventListener("input", (e) => {
+      const target = e.target as HTMLInputElement;
+      const value = parseFloat(target.value);
+      if (!isNaN(value) && value >= 0) {
+        this.settings.shippingCostPerKg = value;
+        this.saveSettings();
+      }
+    });
   }
 
   public updateUI(): void {
@@ -500,11 +546,31 @@ class PopupController {
     const notificationsToggle = document.getElementById("notificationsToggle") as HTMLInputElement;
     const aiToggle = document.getElementById("aiToggle") as HTMLInputElement;
     const onlyNewToggle = document.getElementById("onlyNewToggle") as HTMLInputElement;
+    const shippingToggle = document.getElementById("shippingToggle") as HTMLInputElement;
+    const shippingCostPerKg = document.getElementById("shippingCostPerKg") as HTMLInputElement;
+    const shippingCostContainer = document.getElementById("shippingCostContainer");
 
     if (animationsToggle) animationsToggle.checked = this.settings.animations;
     if (notificationsToggle) notificationsToggle.checked = this.settings.notifications;
     if (aiToggle) aiToggle.checked = this.settings.aiSearchEnabled;
     if (onlyNewToggle) onlyNewToggle.checked = this.settings.onlyNew;
+    
+    if (shippingToggle) {
+      shippingToggle.checked = this.settings.shippingEnabled;
+      
+      // Show/hide shipping cost container based on toggle state
+      if (shippingCostContainer) {
+        if (this.settings.shippingEnabled) {
+          shippingCostContainer.classList.remove("hidden");
+        } else {
+          shippingCostContainer.classList.add("hidden");
+        }
+      }
+    }
+    
+    if (shippingCostPerKg) {
+      shippingCostPerKg.value = this.settings.shippingCostPerKg.toString();
+    }
   }
 
   private updateLanguageSelect(): void {
@@ -645,6 +711,8 @@ class PopupController {
       maxCachedQueries: 1000,
       cacheExpirationDays: 30,
       onlyNew: false,
+      shippingEnabled: false,
+      shippingCostPerKg: 5.0,
     };
 
     await this.loadLanguage();

@@ -25,6 +25,9 @@ export interface AIQuery {
   id: string;
   originalQuery: string;
   optimizedQuery: string;
+  estimatedWeight?: number; // Weight in kg extracted from AI analysis
+  weightConfidence?: 'high' | 'medium' | 'low'; // AI confidence in weight estimation
+  weightSource?: string; // Description of how weight was estimated
   timestamp: number;
   usageCount: number;
   tokensSaved: number;
@@ -48,6 +51,9 @@ export interface ExtensionSettings {
   language: "es" | "pt";
   geminiApiKey: string;
   aiSearchEnabled: boolean;
+  onlyNew: boolean;
+  shippingEnabled: boolean;
+  shippingCostPerKg: number;
   maxCachedQueries: number;
   cacheExpirationDays: number;
 }

@@ -63,7 +63,7 @@
     </style>
   </head>
   <body>
-    <div class="min-h-screen p-8 max-w-7xl mx-auto">
+    <div class="min-h-screen p-8 mx-auto">
       <!-- Header -->
       <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
         <div class="flex items-center justify-between">
@@ -157,6 +157,7 @@
               <option value="usageCount" data-i18n="sortByUsageCount">Más usadas</option>
               <option value="timestamp" data-i18n="sortByCreated">Fecha creación</option>
               <option value="tokensSaved" data-i18n="sortByTokens">Tokens ahorrados</option>
+              <option value="estimatedWeight" data-i18n="sortByWeight">Peso estimado</option>
             </select>
           </div>
           <div class="flex items-center space-x-2">
@@ -208,6 +209,7 @@
                 <th class="text-left py-3 px-4 font-medium text-gray-700 text-sm" data-i18n="originalQueryLabel">Consulta Original</th>
                 <th class="text-left py-3 px-4 font-medium text-gray-700 text-sm" data-i18n="optimizedQueryLabel">Consulta Optimizada</th>
                 <th class="text-left py-3 px-4 font-medium text-gray-700 text-sm" data-i18n="sourceLabel">Fuente</th>
+                <th class="text-left py-3 px-4 font-medium text-gray-700 text-sm" data-i18n="estimatedWeightLabel">Peso Est.</th>
                 <th class="text-left py-3 px-4 font-medium text-gray-700 text-sm" data-i18n="usageCountLabel">Usos</th>
                 <th class="text-left py-3 px-4 font-medium text-gray-700 text-sm" data-i18n="tokensSavedLabel">Tokens</th>
                 <th class="text-left py-3 px-4 font-medium text-gray-700 text-sm" data-i18n="lastUsedLabel">Último Uso</th>
@@ -290,6 +292,25 @@
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2" data-i18n="tokensSavedLabel">Tokens Ahorrados</label>
                   <input type="number" id="editTokensSaved" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm" />
+                </div>
+              </div>
+              <div class="grid grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2" data-i18n="estimatedWeightLabel">Peso Estimado (kg)</label>
+                  <input type="number" step="0.1" id="editEstimatedWeight" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2" data-i18n="weightConfidenceLabel">Confianza Peso</label>
+                  <select id="editWeightConfidence" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm">
+                    <option value="" data-i18n="notSpecified">No especificado</option>
+                    <option value="high" data-i18n="highConfidence">Alta</option>
+                    <option value="medium" data-i18n="mediumConfidence">Media</option>
+                    <option value="low" data-i18n="lowConfidence">Baja</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2" data-i18n="weightSourceLabel">Fuente Peso</label>
+                  <input type="text" id="editWeightSource" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm" placeholder="AI, estimación, etc." />
                 </div>
               </div>
             </div>
