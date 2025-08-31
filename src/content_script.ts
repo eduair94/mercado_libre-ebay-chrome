@@ -945,6 +945,22 @@ function currencyConversion(item: Item, currencySymbol = "UYU"): CurrencyConvers
  * Creates search URL for platform
  */
 async function createSearchURL(platform: "ebay" | "amazon", query: string, maxPrice?: number, onlyNew = false): Promise<string> {
+
+  let minPriceStr = '';
+  let maxPriceStr = ''
+
+      // Add max price filter if provided
+    if (maxPrice && maxPrice > 0) {
+        maxPriceStr = Math.floor(maxPrice).toString();
+      if(maxPrice > 900) {
+        minPriceStr = Math.floor(maxPrice * 0.4).toString();
+      } else if(maxPrice > 100) {
+        minPriceStr = Math.min(Math.floor(maxPrice) - 50, 100).toString();
+      } else if(maxPrice > 50) {
+        minPriceStr = Math.floor(maxPrice * 0.5).toString();
+      }
+    }
+
   const optimizedQuery = await optimizeSearchQueryWithGemini(query, extensionConfig.geminiApiKey);
 
   if (platform === "ebay") {
@@ -959,12 +975,11 @@ async function createSearchURL(platform: "ebay" | "amazon", query: string, maxPr
       _skc: "50",
     };
 
-    // Add max price filter if provided
-    if (maxPrice && maxPrice > 0) {
-      searchParams._udhi = Math.floor(maxPrice).toString();
-      if(maxPrice > 100) {
-        searchParams._udlo = Math.min(Math.floor(maxPrice) - 50, 100).toString();
-      }
+    if(maxPriceStr) {
+      searchParams._udhi = maxPriceStr;
+    }
+    if(minPriceStr) {
+      searchParams._udlo = minPriceStr;
     }
 
     return "https://www.ebay.com/sch/i.html?" + new URLSearchParams(searchParams).toString();
@@ -973,8 +988,9 @@ async function createSearchURL(platform: "ebay" | "amazon", query: string, maxPr
       "https://www.amazon.com/s?" +
       new URLSearchParams({
         k: optimizedQuery,
-        ref: "sr_st_price-asc-rank",
         s: "price-asc-rank",
+        'low-price': minPriceStr,
+        'high-price': maxPriceStr,
         qid: Date.now().toString(),
       }).toString()
     );
@@ -1046,7 +1062,7 @@ function createButtonClickHandler(platform: "ebay" | "amazon", productName: stri
         }
       }
 
-      const searchURL = await createSearchURL(platform, productName, platform === "ebay" ? maxPriceUSD : undefined, extensionConfig.onlyNew);
+      const searchURL = await createSearchURL(platform, productName, maxPriceUSD, extensionConfig.onlyNew);
       console.log(`${itemType} ${platform} search URL:`, searchURL);
 
       const response = await sendMessagePromise({
