@@ -190,5 +190,29 @@
   "onlyNewLabel": {
     "message": "Solo Artículos Nuevos (eBay)",
     "description": "Etiqueta para filtrar solo artículos nuevos en eBay"
+  },
+  "ivaLabel": {
+    "message": "Cálculo de IVA",
+    "description": "Etiqueta para la configuración de IVA"
+  },
+  "ivaDescription": {
+    "message": "Incluir IVA automáticamente para compras internacionales superiores a $200 USD",
+    "description": "Descripción del cálculo de IVA"
+  },
+  "enableIvaLabel": {
+    "message": "Aplicar IVA automático",
+    "description": "Etiqueta para activar el cálculo automático de IVA"
+  },
+  "enableIvaDescription": {
+    "message": "Incluir IVA cuando el precio del producto supere los $200 USD",
+    "description": "Descripción de cuándo se aplica el IVA"
+  },
+  "ivaPercentageLabel": {
+    "message": "Porcentaje de IVA (%)",
+    "description": "Etiqueta para el campo de porcentaje de IVA"
+  },
+  "ivaPercentageHelper": {
+    "message": "💡 Valor típico: 22% para Uruguay, ajustable según país",
+    "description": "Ayuda para el campo de porcentaje de IVA"
   }
 }

@@ -288,6 +288,61 @@
         </div>
       </div>
 
+      <!-- IVA Configuration -->
+      <div class="settings-card bg-white rounded-xl p-4 shadow-md border border-gray-100">
+        <h3 class="font-semibold text-gray-800 text-sm mb-3 flex items-center space-x-2">
+          <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+          </svg>
+          <span data-i18n="ivaLabel">Cálculo de IVA</span>
+          <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full font-medium">NUEVO</span>
+        </h3>
+        <p class="text-gray-500 text-xs mb-4" data-i18n="ivaDescription">Incluir IVA automáticamente para compras internacionales superiores a $200 USD</p>
+
+        <div class="space-y-4">
+          <!-- Enable IVA Toggle -->
+          <div class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors">
+            <div class="flex-1">
+              <h4 class="text-sm font-medium text-gray-700 flex items-center space-x-2">
+                <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                </svg>
+                <span data-i18n="enableIvaLabel">Aplicar IVA automático</span>
+              </h4>
+              <p class="text-xs text-gray-500" data-i18n="enableIvaDescription">Incluir IVA cuando el precio del producto supere los $200 USD</p>
+            </div>
+            <div class="toggle-container">
+              <input type="checkbox" id="ivaToggle" checked />
+              <span class="toggle-slider"></span>
+            </div>
+          </div>
+
+          <!-- IVA Percentage Input -->
+          <div id="ivaPercentageContainer">
+            <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
+              <label for="ivaPercentage" class="block text-sm font-medium text-gray-700 mb-2">
+                <span data-i18n="ivaPercentageLabel">Porcentaje de IVA (%)</span>
+              </label>
+              <div class="relative">
+                <input type="number" id="ivaPercentage" min="0" max="100" step="0.1" value="22" class="w-full pr-8 pl-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm" placeholder="22" />
+                <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">%</span>
+              </div>
+              <p class="text-xs text-purple-600 mt-2" data-i18n="ivaPercentageHelper">💡 Valor típico: 22% para Uruguay, ajustable según país</p>
+            </div>
+          </div>
+
+          <!-- IVA Information -->
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div class="flex items-start space-x-2">
+              <svg class="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <div class="text-xs text-blue-700"><strong>Aplicación inteligente:</strong> El IVA se aplica solo cuando el precio del producto (sin envío) supera los $200 USD. Útil para compras internacionales con regulaciones de importación.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Shipping Cost Configuration -->
       <div class="settings-card bg-white rounded-xl p-4 shadow-md border border-gray-100">
         <h3 class="font-semibold text-gray-800 text-sm mb-3 flex items-center space-x-2">

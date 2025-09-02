@@ -25,11 +25,23 @@ class InlineAIQueryManager {
     }
   ): Promise<void> {
     try {
+      // Check if chrome storage is available
+      if (typeof chrome === "undefined" || !chrome.storage || !chrome.storage.local) {
+        console.warn("❌ [AI] Chrome storage not available, skipping query save");
+        return;
+      }
+
       const queryId = this.generateQueryId(originalQuery);
       const timestamp = Date.now();
 
-      const result = await new Promise<{ [key: string]: any }>((resolve) => {
-        chrome.storage.local.get([this.STORAGE_KEY], resolve);
+      const result = await new Promise<{ [key: string]: any }>((resolve, reject) => {
+        chrome.storage.local.get([this.STORAGE_KEY], (result) => {
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+          } else {
+            resolve(result);
+          }
+        });
       });
 
       const queries: AIQuery[] = result[this.STORAGE_KEY] || [];
@@ -69,8 +81,14 @@ class InlineAIQueryManager {
         }
       }
 
-      await new Promise<void>((resolve) => {
-        chrome.storage.local.set({ [this.STORAGE_KEY]: queries }, resolve);
+      await new Promise<void>((resolve, reject) => {
+        chrome.storage.local.set({ [this.STORAGE_KEY]: queries }, () => {
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+          } else {
+            resolve();
+          }
+        });
       });
 
       console.log("💾 [AI] Query saved successfully:", queryId);
@@ -81,9 +99,21 @@ class InlineAIQueryManager {
 
   static async getCachedQuery(originalQuery: string): Promise<AIQuery | null> {
     try {
+      // Check if chrome storage is available
+      if (typeof chrome === "undefined" || !chrome.storage || !chrome.storage.local) {
+        console.warn("❌ [AI] Chrome storage not available, skipping cache lookup");
+        return null;
+      }
+
       const queryId = this.generateQueryId(originalQuery);
-      const result = await new Promise<{ [key: string]: any }>((resolve) => {
-        chrome.storage.local.get([this.STORAGE_KEY], resolve);
+      const result = await new Promise<{ [key: string]: any }>((resolve, reject) => {
+        chrome.storage.local.get([this.STORAGE_KEY], (result) => {
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+          } else {
+            resolve(result);
+          }
+        });
       });
 
       const queries: AIQuery[] = result[this.STORAGE_KEY] || [];
@@ -98,8 +128,14 @@ class InlineAIQueryManager {
           query.lastUsed = Date.now();
 
           // Save updated query
-          await new Promise<void>((resolve) => {
-            chrome.storage.local.set({ [this.STORAGE_KEY]: queries }, resolve);
+          await new Promise<void>((resolve, reject) => {
+            chrome.storage.local.set({ [this.STORAGE_KEY]: queries }, () => {
+              if (chrome.runtime.lastError) {
+                reject(chrome.runtime.lastError);
+              } else {
+                resolve();
+              }
+            });
           });
 
           return query;
@@ -226,6 +262,8 @@ let extensionConfig = {
   shippingCostPerKg: 5.0,
   maxCachedQueries: 1000,
   cacheExpirationDays: 30,
+  ivaEnabled: true,
+  ivaPercentage: 22,
 };
 
 console.log("🚀 MercadoLibre Extension - Content Script Loaded!");
@@ -241,7 +279,18 @@ console.log("🤖 [AI] InlineAIQueryManager initialized successfully!");
 // Load initial configuration
 function loadConfiguration() {
   try {
+    // Check if chrome storage is available
+    if (typeof chrome === "undefined" || !chrome.storage || !chrome.storage.sync) {
+      console.warn("❌ Chrome storage not available, using default configuration");
+      return;
+    }
+
     chrome.storage.sync.get("extensionConfig", (result) => {
+      if (chrome.runtime.lastError) {
+        console.error("❌ Error loading configuration:", chrome.runtime.lastError);
+        return;
+      }
+
       if (result.extensionConfig) {
         extensionConfig = { ...extensionConfig, ...result.extensionConfig };
         console.log("⚙️ Configuration loaded:", extensionConfig);
@@ -357,18 +406,19 @@ function cleanupExtension() {
 }
 
 // Listen for configuration updates from popup
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === "CONFIG_UPDATED") {
-    console.log("🔄 Configuration updated:", message.config);
-    extensionConfig = { ...extensionConfig, ...message.config };
+if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage) {
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === "CONFIG_UPDATED") {
+      console.log("🔄 Configuration updated:", message.config);
+      extensionConfig = { ...extensionConfig, ...message.config };
 
-    // Check if extension should be cleaned up
-    if (message.shouldCleanup) {
-      console.log("🧹 Extension disabled - cleaning up...");
-      cleanupExtension();
-      showNotification("Extensión deshabilitada - limpieza completa", "info");
-    } else {
-      applyConfigurationChanges();
+      // Check if extension should be cleaned up
+      if (message.shouldCleanup) {
+        console.log("🧹 Extension disabled - cleaning up...");
+        cleanupExtension();
+        showNotification("Extensión deshabilitada - limpieza completa", "info");
+      } else {
+        applyConfigurationChanges();
 
       // Show notification if enabled
       if (extensionConfig.notifications) {
@@ -394,7 +444,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({ success: true });
   }
   return true;
-});
+  });
+} else {
+  console.warn("❌ Chrome runtime not available for message listening");
+}
 
 // Show in-page notification
 function showNotification(message: string, type: "success" | "error" | "info" = "info") {
@@ -536,19 +589,49 @@ function formatCurrency(amount: number, currency: string): string {
 }
 
 /**
- * Formats price with shipping cost if enabled
+ * Formats price with shipping cost and IVA if enabled
  */
 function formatPriceWithShipping(productName: string, price: number, currency: string, isLocalCurrency = false): string {
   const shippingData = calculateShippingCost(productName);
   const currencySymbol = currency === "USD" ? "US$" : currency;
-
+  
+  let finalPrice = price;
+  
+  // Add shipping cost if enabled
   if (extensionConfig.shippingEnabled && shippingData.shippingCost > 0) {
-    const totalPrice = price + shippingData.shippingCost;
-    const shippingText = `+ ${formatCurrency(shippingData.shippingCost, currency).replace(currencySymbol + " ", "")} envío`;
-    return `${currencySymbol} ${totalPrice.toFixed(2)}`;
+    finalPrice += shippingData.shippingCost;
+  }
+  
+  // Add IVA if enabled and price (without shipping) exceeds $200 USD
+  if (extensionConfig.ivaEnabled && price > 200 && currency === "USD") {
+    const ivaAmount = price * (extensionConfig.ivaPercentage / 100);
+    finalPrice += ivaAmount;
   }
 
-  return `${currencySymbol} ${price.toFixed(2)}`;
+  return `${currencySymbol} ${finalPrice.toFixed(2)}`;
+}
+
+/**
+ * Calculates price difference percentage for color coding
+ */
+function calculatePriceDifferencePercentage(originalPrice: number, comparisonPrice: number): number {
+  if (originalPrice <= 0) return 0;
+  return ((comparisonPrice - originalPrice) / originalPrice) * 100;
+}
+
+/**
+ * Gets color class based on price difference percentage
+ */
+function getPriceColorClass(differencePercentage: number): string {
+  if (differencePercentage <= 20) {
+    return "price-excellent"; // Green - 20% or less more expensive
+  } else if (differencePercentage <= 50) {
+    return "price-good"; // Yellow - 21-50% more expensive  
+  } else if (differencePercentage <= 100) {
+    return "price-warning"; // Orange - 51-100% more expensive
+  } else {
+    return "price-expensive"; // Red - More than double the price
+  }
 }
 
 /**
@@ -1179,6 +1262,13 @@ async function createSearchURL(platform: "ebay" | "amazon", query: string, maxPr
  */
 function sendMessagePromise(message: any): Promise<any> {
   return new Promise((resolve, reject) => {
+    // Check if chrome runtime is available
+    if (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.sendMessage) {
+      console.warn("❌ Chrome runtime not available, message cannot be sent:", message);
+      reject(new Error("Chrome runtime not available"));
+      return;
+    }
+
     chrome.runtime.sendMessage(message, (response) => {
       if (chrome.runtime.lastError) {
         reject(chrome.runtime.lastError);
@@ -1273,23 +1363,34 @@ function createButtonClickHandler(platform: "ebay" | "amazon", productName: stri
 
         // Improved price comparison logic that handles all currencies
         let isBetterPrice = false;
+        let mlPriceForComparison = mlPrice.price;
+        let comparisonPrice = bestMatch.price;
 
         if (mlPrice.currency === "USD" && bestMatch.currency === "USD") {
           // Both in USD - direct comparison
           isBetterPrice = bestMatch.price < mlPrice.price;
+          comparisonPrice = bestMatch.price;
+          mlPriceForComparison = mlPrice.price;
         } else if (mlPrice.currency === bestMatch.currency) {
           // Same currency - direct comparison
           isBetterPrice = bestMatch.price < mlPrice.price;
+          comparisonPrice = bestMatch.price;
+          mlPriceForComparison = mlPrice.price;
         } else {
-          // Different currencies - use converted price
+          // Different currencies - use existing conversion logic
           isBetterPrice = priceRaw < mlPrice.price;
+          comparisonPrice = priceRaw;
+          mlPriceForComparison = mlPrice.price;
         }
 
-        const className = isBetterPrice ? "btn_ml_success" : "btn_ml_danger";
+        // Calculate price difference percentage for color coding
+        const differencePercentage = calculatePriceDifferencePercentage(mlPriceForComparison, comparisonPrice);
+        const colorClass = getPriceColorClass(differencePercentage);
 
-        // Add the appropriate CSS classes based on item type
+        // Add the appropriate CSS classes based on item type and price difference
         const baseClasses = itemType === "main" ? "btn_ml_app btn_ml_app_main" : "btn_ml_app";
-        button.className = `${baseClasses} ${className}`;
+        const platformClass = `${platform}_btn`;
+        button.className = `${platformClass} ${baseClasses} ${colorClass}`;
 
         // Store currency state for this button
         const buttonId = generateButtonId(platform, productName, itemType);
@@ -1418,7 +1519,7 @@ function createIndividualRefreshHandler(platform: "ebay" | "amazon", productName
         button.textContent = platform === "ebay" ? "🛒 eBay" : "📦 Amazon";
       }
 
-      button.className = button.className.replace(/btn_ml_(success|danger)/g, "").trim();
+      button.className = button.className.replace(/btn_ml_(success|danger)|price-(excellent|good|warning|expensive)/g, "").trim();
       if (itemType === "main") {
         button.className = `${platform}_btn btn_ml_app btn_ml_app_main`;
       } else {

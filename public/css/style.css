@@ -438,3 +438,44 @@
 .poly-card .btn_ml_app_container {
   z-index: 5 !important;
 }
+
+/* Price difference color classes for buttons */
+.btn_ml_app.price-excellent {
+  background: linear-gradient(45deg, #10b981, #34d399) !important;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3) !important;
+}
+
+.btn_ml_app.price-excellent:hover {
+  background: linear-gradient(45deg, #059669, #10b981) !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4) !important;
+}
+
+.btn_ml_app.price-good {
+  background: linear-gradient(45deg, #f59e0b, #fbbf24) !important;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3) !important;
+}
+
+.btn_ml_app.price-good:hover {
+  background: linear-gradient(45deg, #d97706, #f59e0b) !important;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4) !important;
+}
+
+.btn_ml_app.price-warning {
+  background: linear-gradient(45deg, #f97316, #fb923c) !important;
+  box-shadow: 0 2px 6px rgba(249, 115, 22, 0.3) !important;
+}
+
+.btn_ml_app.price-warning:hover {
+  background: linear-gradient(45deg, #ea580c, #f97316) !important;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4) !important;
+}
+
+.btn_ml_app.price-expensive {
+  background: linear-gradient(45deg, #dc2626, #ef4444) !important;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3) !important;
+}
+
+.btn_ml_app.price-expensive:hover {
+  background: linear-gradient(45deg, #b91c1c, #dc2626) !important;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4) !important;
+}

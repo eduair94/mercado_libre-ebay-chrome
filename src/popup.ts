@@ -11,6 +11,8 @@ interface ExtensionSettings {
   cacheExpirationDays: number;
   shippingEnabled: boolean;
   shippingCostPerKg: number;
+  ivaEnabled: boolean;
+  ivaPercentage: number;
 }
 
 interface ChromeMessages {
@@ -40,6 +42,8 @@ class PopupController {
     cacheExpirationDays: 30,
     shippingEnabled: false,
     shippingCostPerKg: 5.0,
+    ivaEnabled: true,
+    ivaPercentage: 22,
   };
 
   private messages: ChromeMessages = {};
@@ -110,6 +114,12 @@ class PopupController {
       enableShippingDescription: "Añadir estimación de envío a los precios mostrados",
       shippingCostPerKgLabel: "Costo por Kilogramo (USD)",
       shippingCostHelper: "💡 Ejemplo: $5.00/kg es típico para envío internacional",
+      ivaLabel: "Cálculo de IVA",
+      ivaDescription: "Incluir IVA automáticamente para compras internacionales superiores a $200 USD",
+      enableIvaLabel: "Aplicar IVA automático",
+      enableIvaDescription: "Incluir IVA cuando el precio del producto supere los $200 USD",
+      ivaPercentageLabel: "Porcentaje de IVA (%)",
+      ivaPercentageHelper: "💡 Valor típico: 22% para Uruguay, ajustable según país",
     },
     pt: {
       enabled: "Habilitada",
@@ -175,6 +185,12 @@ class PopupController {
       enableShippingDescription: "Adicionar estimativa de envio aos preços mostrados",
       shippingCostPerKgLabel: "Custo por Quilograma (USD)",
       shippingCostHelper: "💡 Exemplo: $5.00/kg é típico para envio internacional",
+      ivaLabel: "Cálculo de IVA",
+      ivaDescription: "Incluir IVA automaticamente para compras internacionais superiores a $200 USD",
+      enableIvaLabel: "Aplicar IVA automático",
+      enableIvaDescription: "Incluir IVA quando o preço do produto superar os $200 USD",
+      ivaPercentageLabel: "Porcentagem de IVA (%)",
+      ivaPercentageHelper: "💡 Valor típico: 22% para Uruguai, ajustável por país",
     },
   };
 
@@ -499,6 +515,36 @@ class PopupController {
         this.saveSettings();
       }
     });
+
+    // IVA Controls
+    const ivaToggle = document.getElementById("ivaToggle") as HTMLInputElement;
+    const ivaPercentage = document.getElementById("ivaPercentage") as HTMLInputElement;
+    const ivaPercentageContainer = document.getElementById("ivaPercentageContainer");
+
+    ivaToggle?.addEventListener("change", (e) => {
+      const target = e.target as HTMLInputElement;
+      this.settings.ivaEnabled = target.checked;
+      
+      // Show/hide the percentage input container
+      if (ivaPercentageContainer) {
+        if (target.checked) {
+          ivaPercentageContainer.classList.remove("hidden");
+        } else {
+          ivaPercentageContainer.classList.add("hidden");
+        }
+      }
+      
+      this.saveSettings();
+    });
+
+    ivaPercentage?.addEventListener("input", (e) => {
+      const target = e.target as HTMLInputElement;
+      const value = parseFloat(target.value);
+      if (!isNaN(value) && value >= 0 && value <= 100) {
+        this.settings.ivaPercentage = value;
+        this.saveSettings();
+      }
+    });
   }
 
   public updateUI(): void {
@@ -549,6 +595,9 @@ class PopupController {
     const shippingToggle = document.getElementById("shippingToggle") as HTMLInputElement;
     const shippingCostPerKg = document.getElementById("shippingCostPerKg") as HTMLInputElement;
     const shippingCostContainer = document.getElementById("shippingCostContainer");
+    const ivaToggle = document.getElementById("ivaToggle") as HTMLInputElement;
+    const ivaPercentage = document.getElementById("ivaPercentage") as HTMLInputElement;
+    const ivaPercentageContainer = document.getElementById("ivaPercentageContainer");
 
     if (animationsToggle) animationsToggle.checked = this.settings.animations;
     if (notificationsToggle) notificationsToggle.checked = this.settings.notifications;
@@ -570,6 +619,23 @@ class PopupController {
     
     if (shippingCostPerKg) {
       shippingCostPerKg.value = this.settings.shippingCostPerKg.toString();
+    }
+
+    if (ivaToggle) {
+      ivaToggle.checked = this.settings.ivaEnabled;
+      
+      // Show/hide IVA percentage container based on toggle state
+      if (ivaPercentageContainer) {
+        if (this.settings.ivaEnabled) {
+          ivaPercentageContainer.classList.remove("hidden");
+        } else {
+          ivaPercentageContainer.classList.add("hidden");
+        }
+      }
+    }
+    
+    if (ivaPercentage) {
+      ivaPercentage.value = this.settings.ivaPercentage.toString();
     }
   }
 
@@ -713,6 +779,8 @@ class PopupController {
       onlyNew: false,
       shippingEnabled: false,
       shippingCostPerKg: 5.0,
+      ivaEnabled: true,
+      ivaPercentage: 22,
     };
 
     await this.loadLanguage();
